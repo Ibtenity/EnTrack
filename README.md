@@ -23,7 +23,9 @@ Just download the repository - the only file you need is the html one.
 
 ## Support
 Since this is a browser-based video player, file support depends on the browser. 
-In general, webVTT subtitles are the best subtitles to use. [Here's a link](https://subtitletools.com/convert-to-vtt-online) that can very quickly convert dozens of subtitle files of a multitude of types at once.
+In general, webVTT subtitles are the best subtitles to use. 
+
+[Here's a link](https://subtitletools.com/convert-to-vtt-online) that can very quickly convert dozens of subtitle files of a multitude of types at once.
 
 # Things to Add
 As it is now, I am using Font Awesome 5 Video/Audio icons, which require a CDN (i.e. internet connection) for the icons to be loaded so the icons will not all appear without an internet connection, however the buttons are still there and can be used.
