@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.7.0/css/all.css' integrity='sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ' crossorigin='anonymous'>
+    <title>Custom HTML5 Video Player</title>
+  </head>
+
+  <!-- From: https://github.com/IIIIllllIIIIllllIIIIllllIIIIllllIIIIll/rikaikun/issues/56
+  Chrome changed something a bit ago so now if you want to be able to use an
+  extension on file:// url you have to go to the extension management page (where
+  you would uninstall and allow in incognito mode) and manually allow rikaikun to
+  access file urls.
+   -->
+
+  <!--THE DIALOG BUTTON TO SET VIDEO SOURCE-->
+  <div class="loader">
+    <input id="file" class="inputfile" type='file' onchange="readURL(this);" name="uploadfile" multiple> <!-- </div> -->
+    <!-- <button type="button" name="button"> -->
+      <label for="file" class="blah">Choose video</label>
+    <!-- </button> -->
+
+  <!--THE DIALOG BUTTON TO SET THE SUBTITLE/TRACK SOURCE--> <!-- <div class="loader"> -->
+    <input id="file2" class="inputfile" type='file' onchange="readURL2(this);" name="uploadfile" multiple> <!-- </div> -->
+    <!-- <button type="button" name="button"> -->
+      <label for="file2" class="blah">Choose track</label>
+    <!-- </button> -->
+
+    <!--THE DIALOG BUTTON TO SET THE 2nd SUBTITLE/TRACK SOURCE-->
+    <input id="file3" class="inputfile" type='file' onchange="readURL3(this);" name="uploadfile" multiple>
+    <!-- <button type="button" name="button"> -->
+      <label for="file3" class="blah">Choose track 2</label>
+    <!-- </button> -->
+
+    <button id="prevSub" type="button" name="button">
+        <label for="prevSub" class="blah">Skim to prev subtitle</label>
+    </button>
+      <!-- **texttrack mode; **Array.findIndex -->
+    <button id="nextsub" type="button" name="button">
+      <label for="nextsub" class="blah">Skim to next subtitle</label>
+    </button>
+
+    <button id="hidesubs" type="button" name="button">
+      <label for="hidesubs" class="blah">Toggle primary subtitles</label>
+    </button>
+    <span id="filename"></span>
+  </div>
+
+
+  <!--THE VIDEO ELEMENT-->
+  <div class="container" id="ccontainer">
+    <div class="video-container">
+      <video id="video1" preload="metadata" >
+          <!-- <source src="BnHA.mkv" type="video/mp4" /> -->
+          <source type="video/mp4" src=""/>
+          <track id="track1" kind="subtitles" src="" srclang="" label="primary" mode="showing" default> <!-- for now subtitles have to be webVTT format -->
+          <track id="track2" kind="subtitles" src="" srclang="" label="secondary" mode="showing">
+      </video>
+
+      <div id="display-container">
+        <div class="reference" id="second"></div>
+        <div id="display" class="display_text remove_text"></div> <!-- ** some visibility initialization issue (or maybe not anymore) -->
+      </div>
+
+      <!-- CONTROLS -->
+      <div id="controls_bar">
+    		<button><div id="playButton" class="button"></div></button>
+    		<button id="pbutton"><i class="pbutton fas fa-play" style="cursor:pointer"></i></button>
+    		<button id="vbutton"><i class='vbutton fas fa-volume-up'></i></button>
+    		<div id="vbox"><input id="volSlider" class="seeker" type="range" min="0" max="20" value="20" step="1"></div>
+    		<div id="currentTime">00:00</div><div id="durationTime">/&nbsp;00:00</div>
+        <div class="imcst seektrack" id="seektrack">
+          <div class="seekbar">
+            <div class="progressbar" id="pbar"></div>
+            <div class="progressafter">
+            </div>
+          </div>
+          <div class="dot"></div>
+        </div>
+
+    		<button id="fbutton"><i class='fbutton fas fa-expand'></i></button>
+    	</div>
+    </div>
+  </div>
+
+
+  <style>
+    /* Possible last resort solution https://stackoverflow.com/questions/18389224/how-to-style-html5-range-input-to-have-different-color-before-and-after-slider/38163892#38163892 */
+    /* Seeker progress fill adapted from: https://jsfiddle.net/48eL125o/4/ */
+    .inputfile {  /* adapted from: https://tympanus.net/codrops/2015/09/15/styling-customizing-file-inputs-smart-way/ */
+      width: 0.1px;
+      height: 0.1px;
+      opacity: 0;
+      overflow: hidden;
+      position: absolute;
+      z-index: -1;
+      cursor: pointer;
+    }
+    label {
+      cursor: pointer;
+    }
+    .inputfile+label {
+      color: yellow;
+      /* background-color: black; */
+      display: inline-block;
+    }
+
+    .inputfile+label:hover {
+      opacity: 0.8;
+    }
+  	.fas {
+  		font-size: 16px;
+      background-color: transparent;
+  	}
+    .fas:hover {
+      opacity: 0.8;
+    }
+    #seektrack{
+      position: relative;
+      background: #000;
+      /* border:#666 1px solid; */
+      height:4px;
+      cursor: pointer;
+      width: 100%;
+      transition: width 500ms;
+      -webkit-transition: width 500ms; /* Safari 3.1 to 6.0 */
+      margin: 0px 5px;
+    }
+    .progressafter{
+      position:absolute;
+      background: orange;
+      height: 100%;
+    }
+    .seeker {
+      background-color: #dedede;
+      background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #ff1100), color-stop(100%, #ff1100));
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+    }
+    .dot {
+      left: initial;
+      height: 12px;
+      width: 12px;
+      margin-top: -4px;
+      background-color: #bbb;
+      border-radius: 50%;
+      /* display: inline-block; */
+      display: block;
+      position: absolute;
+    }
+    #volSlider:hover, #volSlider:focus {
+      width: 100%;
+      visibility: inherit;
+    }
+  	#volSlider:not(:hover), #volSlider:not(:focus) {
+  		width: 100%;
+  		/* opacity: 0; */
+  		visibility: inherit;
+  		transition: 400ms;
+  		-webkit-transition: 400ms; /* Safari 3.1 to 6.0*/
+  		/* transition:visibility 0s linear 0.5s,opacity 0.5s linear; */
+  	}
+  	#vbox {
+  		padding: 0 0.5em;
+  		width: 0px;
+  		height: 100%;
+  		align-items: center;
+  		position: relative;
+  		display: flex;
+  		visibility: hidden;
+  		transition: width 500ms;
+  		-webkit-transition: width 500ms; /* Safari 3.1 to 6.0 */
+      background-color: transparent;
+  	}
+  	#vbutton:hover + #vbox, #vbox:hover{
+  		width: 100px;
+  		visibility: visible;
+  	}
+  	/* #volSlider:hover{
+  		visibility: visible;
+  		opacity:1
+  	} */
+    span {
+      color: white;
+      background-color: transparent;
+      font-family: "YouTube Noto",Roboto,Arial,Helvetica,sans-serif;
+    }
+  	#currentTime {
+  		padding-left: 0.5em;
+      color: white;
+      background-color: transparent;
+      font-family: "YouTube Noto",Roboto,Arial,Helvetica,sans-serif;
+      user-select: text;
+  	}
+  	#durationTime{
+  		padding-right: 0.5em;
+      color: white;
+      background-color: transparent;
+      font-family: "YouTube Noto",Roboto,Arial,Helvetica,sans-serif;
+      user-select: text;
+      padding-left: 4px;
+  	}
+  	#controls_bar{
+      width: 100%;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+  		height: 2em;
+      background-color: rgba(43,51,63,.7);
+  		display: flex;
+      opacity: 1;
+  		align-items: center;
+      transform: translateY(100%);
+  	}
+  	button {
+  		cursor: pointer;
+  		min-width: 41px;
+  		background-color: transparent;
+  		border: none;
+  		color: whitesmoke;
+  	}
+  	input[type='range'] {
+  		-webkit-appearance: none !important;
+  		height:4px;
+  		cursor: pointer;
+  		width: 100%;
+  		transition: width 500ms;
+  		-webkit-transition: width 500ms; /* Safari 3.1 to 6.0 */
+  	}
+    .seekbar {
+      background: #000;
+      height:100%;
+      cursor: pointer;
+      width: 100%;
+      transition: width 500ms;
+      -webkit-transition: width 500ms; /* Safari 3.1 to 6.0 */
+      position: absolute;
+    }
+    .progressbar { /* child of seekbar */
+      display: block;
+      height: inherit;
+      width: 0%;
+      background-color: red;
+      position: absolute;
+    }
+  	input[type='range']::-webkit-slider-thumb {
+  	    -webkit-appearance: none !important;
+  	    background: #FFF;
+  	    height:10px;
+  	    width:10px;
+  			border-radius:100%;
+  			cursor:pointer;
+  	}
+  	#playButton {
+  		cursor: pointer;
+  		-ms-flex: none;
+  		flex: none;
+  	}
+  	.pbutton {
+  		transition: 100ms all ease;
+  	}
+  	.button {/* adapted from https://css-tricks.com/making-pure-css-playpause-button/ */
+  		border: 0;
+  		background: transparent;
+  		box-sizing: border-box;
+  		width: 0;
+  		height: 18.5px;
+
+  		border-color: transparent transparent transparent steelblue;
+  		transition: 100ms all ease;
+  		cursor: pointer;
+  		padding: 0;
+
+      border-style: double;
+      border-width: 0px 0 0px 15px;
+
+  	}
+  	.button.paused {
+      border-style: solid;
+      border-width: 9.25px 0 9.25px 15px;
+  	}
+  	.button:hover {
+  		border-color: transparent transparent transparent whitesmoke;
+  	}
+  	button:focus, input:focus {
+  		outline:0;
+  	}
+  </style>
+
+<!-- CSS -->
+  <style media="screen">
+    .blah {
+      color: yellow;
+      margin: 0 4px 0 4px;
+      cursor: pointer;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      background: black;
+    }
+    .loader {
+      height: 20px;
+      clear: both;
+    }
+    #second {
+      font-family: Roboto;
+      color: hsla(0,0%,100%,.82);
+      color: hsla(0,0%,100%,.882);
+      height: -webkit-fit-content;
+      height: -moz-fit-content;
+      height: fit-content;
+      width: fit-content;
+      padding: 0px 10px 0px;
+      font-size: .6em;
+      background-color: transparent;
+    }
+    ::-webkit-media-controls-panel {
+      /* background-image: none; */
+      background-size: 0.14px;
+    }
+    video::cue{
+      /* background-color: transparent; */
+      display: none;
+      -ms-user-select: text;
+      -moz-user-select: text;
+      -webkit-user-select: text;
+      text-shadow: 2px 2px 1px #000,-2px -2px 1px #000,-2px 2px 1px #000,2px -2px 1px #000;
+      text-shadow: 1px 1px 1px #000,-1px -1px 1px #000,-1px 1px 1px #000,1px -1px 1px #000;
+
+      /* user-select: text; */
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: calc(100vh - 20px);
+      /* background-color: DodgerBlue;*/
+      background-color: black;
+    }
+
+    .container>.video-container {
+      background-color: inherit;
+      color: white;
+      width: 100vw;
+      height: 56.25vw;
+      max-height: calc(100vh - 52px);
+      margin-bottom: 32px;
+      position: relative;
+      /* background-color: #f1f1f1; */
+    }
+    .container>.video-container>video{
+      width: 100%;
+      height: 100%;
+    }
+    #display-container { /*bottom bar*/
+
+      background-color: transparent;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      color: #fff;
+      text-align: center;
+      font-family: textbook,serif;
+      font-weight: 400;
+      pointer-events: none;
+
+      -webkit-user-select: text!important;
+      -moz-user-select: text!important;
+      -ms-user-select: text!important;
+      user-select: text!important;
+
+      text-shadow: 2px 2px 1px #000, -2px -2px 1px #000, -2px 2px 1px #000, 2px -2px 1px #000;
+      text-shadow: 1px 1px 1px #000, -1px -1px 1px #000, -1px 1px 1px #000, 1px -1px 1px #000;
+      display: -ms-flexbox;
+      display: flex;
+
+      -ms-flex-direction: column;
+      flex-direction: column;
+      -ms-flex-pack: end;
+      justify-content: flex-end;
+      -ms-flex-align: center;
+      align-items: center;
+
+      -webkit-transition: opacity .5s ease;
+      -o-transition: opacity .5s ease;
+      transition: opacity .5s ease;
+    }
+    .text-area {
+      width: -webkit-fit-content;
+      width: -moz-fit-content;
+      width: fit-content;
+
+      display: -ms-flexbox;
+      display: flex;
+
+      -ms-flex-align: end;
+      align-items: flex-end;
+
+      pointer-events: auto;
+      background-color: transparent;
+      margin: auto;
+      color: #ffe200;
+      font-size: 2vw;
+      font-family: Roboto;
+    }
+    #display{   /* TK-content */
+      background-color: transparent;
+      pointer-events: none;
+      padding: 12px 32px 80px;
+      font-size: 1.25em;
+      color: hsla(0,0%,100%,.882);
+      opacity: 1;
+
+      justify-content: center;
+      display: -ms-flexbox;
+      display: flex;
+      -ms-flex-direction: column;
+      flex-direction: column;
+      -ms-flex-pack: center;
+      -webkit-transition: opacity .5s ease;
+      -o-transition: opacity .5s ease;
+      transition: opacity .5s ease;
+      -webkit-font-feature-settings: "kern" 1;
+      -ms-font-feature-settings: "kern" 1;
+      -o-font-feature-settings: "kern" 1;
+      font-feature-settings: "kern" 1;
+      -webkit-font-kerning: normal;
+      font-kerning: normal;
+    }
+    video::-webkit-media-controls-current-time-display, video::-webkit-media-controls-time-remaining-display {
+      user-select: text;
+    }
+    video::-webkit-media-controls-mute-button {
+      cursor: pointer;
+    }
+    video::-webkit-media-controls-fullscreen-button {
+      cursor: pointer;
+    }
+    video::-webkit-media-controls-volume-slider{
+      /* , video::-webkit-media-controls-timeline::-webkit-media-slider-container { */
+      cursor: pointer;
+    }
+    video::-webkit-media-controls-play-button {
+      cursor: pointer;
+    }
+  </style>
+
+<!-- JAVASCRIPT -->
+  <script>
+    var vid, playbtn, seekslider, curtimetext, durtimetext, mutebtn, volumeslider, fullscreenbtn, playButton, pbutton, oldClass, newClass, fOld, fNew, vOld, vNew, dur, oldvol, oldSound, tagRule,
+        progressbar, seekbar, mousedown, progressafter, seeker, dot, vc, isfullscreen, button;
+
+    function intializePlayer(){//constructor
+      // Set object references
+      oldClass = "fa-pause"; //pbutton fas fa-play
+      newClass = "fa-play";
+      fOld = "fa-expand";
+      fNew = "fa-compress";
+      vOld = "fa-volume-up";
+      vNew = "fa-volume-mute";
+      oldSound = "fa-volume-up";
+
+      vid = document.getElementById("video1");
+      playbtn = document.querySelector(".pbutton");
+      seekslider = document.getElementById("seeker");
+      curtimetext = document.getElementById("currentTime");
+      durtimetext = document.getElementById("durationTime");
+      volumeslider = document.querySelector(".seeker");
+      fullscreenbtn = document.querySelector(".fbutton");
+      playButton = document.getElementById("pbutton");
+      pbutton = document.getElementById("pbutton");
+      mutebtn = document.getElementById("vbutton");
+      progressbar = document.querySelector(".progressbar");
+      progressafter = document.querySelector(".progressafter");
+      dot = document.querySelector(".dot");
+      seekbar = document.querySelector(".seektrack");
+      vc = document.getElementById("ccontainer");
+      button = document.querySelector(".button");
+
+      // Add event listeners
+      vid.addEventListener("click",togglePlay, false);
+      playButton.addEventListener("click", togglePlay, false);
+      pbutton.addEventListener("click", togglePlay, false);
+      vid.addEventListener("timeupdate",seektimeupdate,false);
+      mutebtn.addEventListener("click",vidmute,false);
+      volumeslider.addEventListener("input",setvolume,false);
+      fullscreenbtn.addEventListener("click", toggleFullScreen, false);
+      seekbar.addEventListener("click", vidSeek);
+
+      isfullscreen = false;
+      mousedown = false;
+      document.addEventListener('mousemove', (e) => mousedown && vidSeek(e));
+      document.addEventListener('mouseup', () => mousedown = false);
+      seekbar.addEventListener('mousedown', function() {
+        event.preventDefault();
+        mousedown = true;
+      });
+
+      vid.addEventListener('loadeddata', function() {                 //video is loaded and can be played
+        playbtn.className = "pbutton fas fa-pause";
+        document.querySelector(".button").classList.remove("paused"); //updating animated CSS play button
+        var durmins = Math.floor(vid.duration / 60);
+        var dursecs = Math.floor(vid.duration - durmins * 60);
+        if(dursecs < 10){ dursecs = "0"+dursecs; }
+        if(durmins < 10){ durmins = "0"+durmins; }
+        durtimetext.innerHTML = "/&nbsp;"+durmins+":"+dursecs;
+        GetFileName();
+      }, false);
+
+      document.querySelector('video').addEventListener('ended',function(){ // On video end:
+        //**
+        playbtn.className = "pbutton fas fa-play";
+        document.querySelector(".button").classList.toggle("paused");
+        var input = document.getElementById("file");
+        if(vidindex<input.files.length){
+          vidindex++;
+          nextVid(input);
+          readURL2(document.getElementById("file2"));
+          readURL3(document.getElementById("file3"));
+        }
+      }, false);
+
+      // **var myTrack = track.track; //for setting the id for each subtitle to its index value in its cue list
+      // for(var i = 0; i<myTrack.cues.length; i++){
+      //   myTrack.cues[i].id = i;
+      // }
+
+    }
+
+    window.onload = intializePlayer; //constructor-call
+
+    function getRuleWithSelector(selector) {
+      var numSheets = document.styleSheets.length,
+      numRules,
+      sheetIndex,
+      ruleIndex;
+      // Search through the style sheets.
+      for (sheetIndex = 0; sheetIndex < numSheets; sheetIndex += 1) {
+        numRules = document.styleSheets[sheetIndex].cssRules.length;
+        for (ruleIndex = 0; ruleIndex < numRules; ruleIndex += 1) {
+          if (document.styleSheets[sheetIndex].cssRules[ruleIndex].selectorText === selector) {
+            return document.styleSheets[sheetIndex].cssRules[ruleIndex];
+          }
+        }
+      }
+      // If we get this far, then the rule doesn't exist, So the return value is undefined.
+    }
+
+    function seekprogress(){
+      var min = seekslider.min,
+          max = seekslider.max,
+          val = Math.round(vid.currentTime * (dur / vid.duration));
+      seekslider.style.backgroundSize = ((val - min) * 100 / (max - min)) + '% 100%';
+    }
+
+    function vidSeek(e){ //https://www.youtube.com/watch?v=yx-HYerClEA
+      const seekto = ((e.pageX-seekbar.offsetLeft) / seekbar.offsetWidth) * vid.duration;
+      vid.currentTime = seekto;
+      progressbar.style.width = (vid.currentTime / vid.duration)*100 + "%";
+      progressafter.style.left = progressbar.style.width;
+      progressafter.style.width = (100 - ((vid.currentTime / vid.duration)*100)) + "%";
+      dot.style.left = (((vid.currentTime / vid.duration)*100)-0.3) + "%";
+    }
+
+    function seektimeupdate(){ //updates seekslider's (range's) value
+      if(!mousedown){
+        progressbar.style.width = (vid.currentTime / vid.duration)*100 + "%";
+        progressafter.style.left = progressbar.style.width;
+        progressafter.style.width = (100 - ((vid.currentTime / vid.duration)*100)) + "%";
+        dot.style.left = (((vid.currentTime / vid.duration)*100)-0.3) + "%";
+      }
+      var curmins = Math.floor(vid.currentTime / 60);
+      var cursecs = Math.floor(vid.currentTime - curmins * 60);
+      if(cursecs < 10){ cursecs = "0"+cursecs; }
+      if(curmins < 10){ curmins = "0"+curmins; }
+      curtimetext.innerHTML = curmins+":"+cursecs;
+    }
+
+    function vidmute(){
+      var btn = document.querySelector(".vbutton");
+      if(vid.muted){
+      	vid.muted = false;
+        volumeslider.value = oldvol;
+        setvolume();
+      } else {
+      	vid.muted = true;
+        oldvol = volumeslider.value;
+        volumeslider.value = 0;
+        setvolume();
+      }
+    }
+
+    function setvolume(){
+      vid.volume = volumeslider.value / 20;
+      var btn = document.querySelector(".vbutton");
+      if(vid.volume==0){
+        btn.classList.replace(oldSound, "fa-volume-mute");
+        oldSound = "fa-volume-mute";
+      }
+      else if(vid.volume < 0.5){
+        btn.classList.replace(oldSound, "fa-volume-down");
+        oldSound = "fa-volume-down";
+      }
+      else {
+        btn.classList.replace(oldSound, "fa-volume-up");
+        oldSound = "fa-volume-up";
+      }
+      volumeslider.style.backgroundSize = ((volumeslider.value - volumeslider.min) * 100 / (volumeslider.max - volumeslider.min)) + '% 100%';
+    }
+
+    function toggleFullScreen(){
+      if(isfullscreen){
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+        fullscreenbtn.className = "pbutton fas fa-expand";
+        isfullscreen = false;
+      }
+      else {
+        let elem = vc;
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen();
+        } else if (elem.mozRequestFullScreen) { /* Firefox */
+          elem.mozRequestFullScreen();
+        } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+          elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE/Edge */
+          elem.msRequestFullscreen();
+        }
+        fullscreenbtn.className = "pbutton fas fa-compress";
+        isfullscreen = true;
+      }
+    }
+
+    function play(){
+      var btn = document.querySelector(".pbutton");
+      var btn2 = document.querySelector(".button");
+      btn2.classList.toggle("paused");
+    }
+
+      var vidindex = 0;
+      var video = document.getElementById("video1");
+      var cur = 0;
+      document.getElementById('nextsub').addEventListener('click', altNextSub);
+      document.getElementById('prevSub').addEventListener('click', prevSub);
+      document.getElementById('hidesubs').addEventListener('click', hideSubs);
+      var elem = document.getElementById("display");
+
+
+      // Functions that set sources =======================================================================================================================
+      function GetFileName(){ //Adapted from: https://forums.asp.net/t/2027451.aspx?How+to+get+file+name+selected+in+input+type+file+
+        var fileInput = document.getElementById('file');
+        var fileName = fileInput.files[vidindex].name;
+        document.getElementById("filename").innerHTML = fileName;
+      }
+
+      function nextVid(input) {
+          //THE METHOD THAT SHOULD SET the SOURCE of the NEXT VID in the PLAYLIST
+          if (input.files && input.files[vidindex]) {
+              var file = input.files[vidindex];
+              var url = URL.createObjectURL(file);
+              var reader = new FileReader();
+              reader.onload = function() {
+                  video.src = url;
+                  video.play();
+              }
+              reader.readAsDataURL(file);
+          }
+      }
+
+      document.getElementById("file").addEventListener("input", readURL, false);
+      function readURL(input) {
+        input = input.target;
+          //THE METHOD THAT SHOULD SET THE VIDEO SOURCE
+          if (input.files && input.files[0]) {
+              var file = input.files[0];
+              var url = URL.createObjectURL(file);
+              console.log(url);
+              var reader = new FileReader();
+              reader.onload = function() {
+                  video.src = url;
+                  video.play();
+                  vidindex = 0;//resetting playlist index when a new set of videos is selected
+              }
+              reader.readAsDataURL(file);
+          }
+      }
+
+      var track = document.getElementById("track1");
+      function readURL2(input) {
+          //THE METHOD THAT SHOULD SET THE VIDEO SOURCE
+          if (input.files && input.files[vidindex]) {
+              var file = input.files[vidindex]; //gets the first file, if multiple files are chosen
+              var url = URL.createObjectURL(file);
+              console.log(url + " vidindex=" + vidindex);
+              var reader = new FileReader();
+              reader.onload = function() {
+                  track.src = url; //makes src of the track element equal to url
+                  track.srclang = url; //this line may not be needed
+                  track.track.mode = "hidden";
+              }
+              reader.readAsDataURL(file);
+          }
+      }
+
+      var track2 = document.getElementById("track2");
+
+      function readURL3(input) {
+          //THE METHOD THAT SHOULD SET THE VIDEO SOURCE
+          if (input.files && input.files[vidindex]) { //what does this line do? probably checks if ?? and  at least one file is selected
+              var file = input.files[vidindex]; //gets the first file, if multiple files are chosen
+              var url = URL.createObjectURL(file);
+              console.log(url + " vidindex=" + vidindex);
+              var reader = new FileReader();
+              reader.onload = function() {
+                  track2.src = url; //makes src of the track element equal to url
+                  track2.srclang = url; //this line may not be needed
+                  track2.track.mode = "hidden";
+              }
+              reader.readAsDataURL(file);
+          }
+      }
+
+
+      //Video control functions ===================================================================================================================================================
+      function subSync(track, offset){
+        // var myTrack = vid.textTracks[0].cues;
+        var myTrack = document.getElementById(track).track.cues;
+        for(var i = 0; i < myTrack.length; i++){
+          myTrack[i].startTime = +(myTrack[i].startTime + offset).toFixed(3); //fixes float addition error that messes up skimming by subtitle and how subs appear on screen a millisecond too late
+          myTrack[i].endTime = +(myTrack[i].endTime + offset).toFixed(3);
+        }
+      }
+
+      window.addEventListener("keydown", catchKeydown, false);
+      function catchKeydown(key){
+        if(key.keyCode == '83'){ //if S is pressed
+          hideSubs("display-container");
+        }
+        else if(key.keyCode == '39'){ //if right key is pressed
+          key.preventDefault(); //prevents right arrow key being pressed from moving the slider (type range) from going to the next value/tick (no longer using range slider though)
+          // nextSub(key);
+          // altNextSub(key);
+          finalNextSub();
+        }
+        else if(key.keyCode == '37'){ //if left key is pressed
+          key.preventDefault();
+          // prevSub(key);
+          // altPrevSub(key);//**might be wonky when prev hasn't been clicked in a while; or perhaps it's only wonky when the subs don't match the video (?). Either use the non-perfect prevSub(), or use altPrevSub with on seek change call getclosestcue
+          finalPrevSub()
+        }
+        else if(key.keyCode == "38"){ //volume up with upkey
+          key.preventDefault();
+          if(video.volume+0.05<=1){//if vol isn't out of bounds
+            volumeslider.value = parseInt(volumeslider.value) + 1;
+            if(video.muted){
+              video.muted = false;
+            }
+            setvolume();
+          }
+        }
+        else if(key.keyCode == "40"){ //volume down with downkey
+          key.preventDefault();
+          if(video.volume-0.05>=0){
+            volumeslider.value -= 1;
+            setvolume();
+          }
+        }
+        else if(key.keyCode == "32"){ //if space key is pressed
+          key.preventDefault(); //prevents space from triggering a button if it's in focus
+          togglePlay(key);
+        }
+        else if(key.keyCode == '82' && (video.textTracks[1].language != "")) { //if key pressed is 'r'
+          hideSubs("second");
+        }
+        else if(key.keyCode == "65"){ //if key pressed is 'a'
+          repeatSub(key);
+        }
+        else if (key.keyCode == "77"){//if key pressed is 'm'
+          vidmute();
+        }
+        else if (key.keyCode == '71'){ //if g is pressed
+          subSync("track1", -0.10);
+        }
+        else if (key.keyCode =='72'){ //if h is pressed
+          subSync("track1", +0.1);
+        }
+        else if(key.keyCode == '90'){
+          subSync("track2", -0.10);
+        }
+        else if (key.keyCode == '88'){
+          subSync("track2", +0.1);
+        }
+        else if(key.keyCode == "70"){ //if key pressed is f
+          toggleFullScreen();
+        }
+      }
+
+      function repeatSub(key){
+        if(track.track.activeCues!=null && track.track.activeCues.length >0){ //might need to be track.track.activeCues[0]
+          video.currentTime = track.track.activeCues[track.track.activeCues.length-1].startTime;
+        }
+      }
+
+      /* Toggles specified 'key' subtitles on the screen */
+      function hideSubs(key){
+        var toHide = document.getElementById(key);
+        if(!(toHide.style.visibility == "hidden")){//need to make sure this is the correct version for checking equality of strings
+          toHide.style.visibility = "hidden";
+        }
+        else {
+          toHide.style.visibility = "visible";
+        }
+      }
+
+      function altNextSub(key){ //this version is broken/incomplete I think, nextSub() is the better version (not sure, might have fixed but I can't remember lmao)
+        var myTrack = null;
+        if(track1.srclang){//shouldn't this be track.srclang?
+          myTrack = document.getElementById("track1").track;
+        }
+        else if(track2.srclang){
+          myTrack = document.getElementById("track2").track;
+        }
+        else {
+          return;
+        }
+        if(video.currentTime >= myTrack.cues[myTrack.cues.length-1].startTime){
+          return;
+        }
+        else {
+          var nextCue = myTrack.cues[cur+1];
+          if(myTrack.cues[cur]===myTrack.activeCues[myTrack.activeCues.length-1]){ //if myTrack.cues is on the screen right now
+            nextCue = myTrack.cues[cur+1];
+          }
+          else {
+            //if track1 is available, skim using its timecodes
+            // getClosestCue(myTrack);
+            altGetClosestCue(myTrack);
+            if(video.currentTime < myTrack.cues[cur].startTime){
+              nextCue = myTrack.cues[cur];
+            }
+            else if(video.currentTime > myTrack.cues[cur].startTime){
+              nextCue = myTrack.cues[cur+1];
+            }
+            //cur should be the exact cue
+          }
+
+          if(myTrack.cues.length > 0) {
+            video.currentTime = nextCue.startTime;
+            cur++;
+          }
+        }
+      }
+
+      function nextSub(key) {
+          //preconditions: video might have to already be started; //track_exists:  you move according to the track1 timecodes unless only track2 has been selected. Must have a track selected.
+          // actually it seems that if only track2 was selected, it gets set as track1? kinda weird
+          //not_last_cue: not on last subtitle //in_bounds: next cue's starttime is not greater than the video length
+          // if(myCues[1].startTime > video.duration){
+          //   return;
+          // }
+          var myTrack = null;
+          if(track1.srclang){//shouldn't this be track.srclang?
+          myTrack = document.getElementById("track1").track;
+          }
+          else if(track2.srclang){
+            myTrack = document.getElementById("track2").track;
+          }
+          else {
+            return;
+          }
+          if(video.currentTime >= myTrack.cues[myTrack.cues.length-1].startTime){ //checking for upper bound of subtitles, i.e. can't go to next sub if it's the last subtitle in the video
+            return;
+          }
+          else {
+            var nextCue = myTrack.cues[cur+1];
+              //if track1 is available, skim using its timecodes
+              if(myTrack.cues[cur].startTime == video.currentTime.toFixed(2)){ //may seem redundant that I have a separate case for this, but it actually solves the problem of cur.endTime = [cur+1].startTime
+                nextCue = myTrack.cues[cur+1];
+              }
+              else {
+                getClosestCue(myTrack);
+                // altGetClosestCue(myTrack);
+                if(myTrack.cues[cur].startTime>video.currentTime){ //if cur is to the right of current time
+                  nextCue = myTrack.cues[cur];
+                }
+                else {
+                  nextCue = myTrack.cues[cur+1];
+                }
+              }
+
+            if(myTrack.cues.length > 0) {
+              video.currentTime = nextCue.startTime;
+              cur++;
+            }
+          }
+
+      }
+
+
+      function altPrevSub(key){
+
+          var myTrack = null;
+          if(track1.srclang){
+            myTrack = document.getElementById("track1").track;
+            // altGetClosestCue(myTrack);
+          }
+          else if(track2.srclang){
+            myTrack = document.getElementById("track2").track;
+            // altGetClosestCue(myTrack);
+          }
+          else {
+            return;
+          }
+          //if video is currently playing at a time before the first subtitle, do nothing
+          if(video.currentTime <= myTrack.cues[0].startTime){
+            return;
+          }
+          // else if(myTrack.cues[0]===myTrack.activeCues[myTrack.activeCues.length-1]){
+          else if(myTrack.cues[0]===myTrack.activeCues[0]){ //if you're on the first subtitle of the video, prev will just put you at the beginning of that subtitle
+            video.currentTime = myTrack.cues[0].startTime;
+          }
+          else {
+            var prevCue = myTrack.cues[cur-1];
+            if(myTrack.activeCues.length>0){
+              for(i = myTrack.activeCues.length-1; i>=0; i--){
+                if(myTrack.cues[cur]===myTrack.activeCues[i]){ //if myTrack.cues is on the screen right now
+                  prevCue = myTrack.cues[cur-1];
+                  break; //** or some other thing that breaks loop but not the outer if statement
+                }
+              }
+            }
+            else {
+              altGetClosestCue(myTrack);
+              if(video.currentTime <= myTrack.cues[cur].endTime){ // proof by picture :  | <____>    where the prev is a timeline and | is video.currentTime and <____> is the range myTrack.cues[cur]
+                prevCue = myTrack.cues[cur-1];
+              }
+              else {
+                prevCue = myTrack.cues[cur];
+              }
+            }
+            if(myTrack.cues.length > 0) {
+              video.currentTime = prevCue.startTime;
+              cur--;
+            }
+          }
+      }
+
+      /* Skims to the start time of the previous subtitle */
+      function prevSub(key){
+
+          var myTrack = null;
+          if(track1.srclang){
+            myTrack = document.getElementById("track1").track;
+            getClosestCue(myTrack);
+            // altGetClosestCue(myTrack);
+          }
+          else if(track2.srclang){
+            myTrack = document.getElementById("track2").track;
+            getClosestCue(myTrack);
+            // altGetClosestCue(myTrack);
+          }
+          else {
+            return;
+          }
+          //if video is currently playing at a time before the first subtitle, do nothing
+          if(video.currentTime <= myTrack.cues[0].startTime){
+            return;
+          }
+          // else if(myTrack.cues[0]===myTrack.activeCues[myTrack.activeCues.length-1]){
+          else if(myTrack.cues[0]===myTrack.activeCues[0]){ //if you're on the first subtitle of the video, prev will just put you at the beginning of that subtitle
+            video.currentTime = myTrack.cues[0].startTime;
+          }
+        else {
+          // getClosestCue(myTrack);
+          var prevCue = myTrack.cues[cur-1];
+          if(myTrack.activeCues.length >0){
+            // prevCue = myTrack.cues[cur-1];
+            if(myTrack.cues[cur].startTime>video.currentTime){
+              if((cur-2)<0){
+                video.currentTime = myTrack.cues[0].startTime;
+              }
+              else {
+                prevCue = myTrack.cues[cur-2];  //if in active cue and video returned current cue is larger than current video time, go to the appropriate prev sub
+              }
+            }
+            else {//if(myTrack.cues[cur].startTime<=video.currentTime){
+              prevCue = myTrack.cues[cur-1];
+            }
+          }
+          else {
+            if(myTrack.cues[cur].startTime>video.currentTime){
+              prevCue = myTrack.cues[cur-1];
+            }
+            else {
+              prevCue = myTrack.cues[cur];
+            }
+          }
+          if(myTrack.cues.length > 0) {
+            video.currentTime = prevCue.startTime;
+            cur--;
+          }
+
+        }
+
+      }
+
+      function togglePlay(key){
+        // if(key.keyCode == "32"){
+          if(video.paused){
+            video.play();
+            playbtn.className = "pbutton fas fa-pause";
+            button.classList.remove("paused");
+          }
+          else {
+            video.pause();
+            playbtn.className = "pbutton fas fa-play";
+            button.classList.add("paused");
+          }
+      }
+
+      function changeVolume(key){ //is never actually called
+        if(key.keyCode == "38"){
+          if(video.volume!=1){//if vol isn't max
+            video.volume = video.volume+0.2;
+          }
+        }
+        else if(key.keyCode == "40"){
+          video.volume -= 0.2;
+        }
+      }
+
+      // adapted from https://webplatform.github.io/docs/apis/audio-video/TextTrack/cues/
+      track.track.oncuechange = function (){ //** textTracks.length is probably the number of subtitle track tags in the video tag.
+        var text = document.getElementById("display");
+        text.innerHTML = "";
+        var myTrack = document.getElementById("track1").track;
+        var i,j;
+        console.log(myTrack.activeCues.length);
+        if(video.textTracks[0].language==""){
+          //skip over it
+        }
+        else {
+          for(i=video.textTracks[0].activeCues.length-1; i>=0; i--){
+            text.innerHTML +=(`<div class="text-area" id="sub${0+1}">` + video.textTracks[0].activeCues[i].getCueAsHTML().textContent + "</div>");
+          }
+        }
+      }
+
+      track2.track.oncuechange = function (){
+        var text2 = document.getElementById("second");
+        text2.innerHTML = "";
+        var i,j;
+        if(video.textTracks[1].language == ""){
+          //do nothing
+        }
+        else {
+          for(i=video.textTracks[1].activeCues.length-1; i>=0; i--){
+            text2.innerHTML +=(`<div class="text-area" id="sub${2}">` + video.textTracks[1].activeCues[i].getCueAsHTML().textContent + "</div>");
+          }
+        }
+      }
+
+
+     /* ** Bug: When video finishes playing the subtitles disappear from their sources (get deloaded I assume), so I need to have an event fire when video stops playing so that I can reset the sub sources*/
+     //Takes a timecode as input and returns closest active cue after it
+     function getClosestCue(myTrack){
+       var key = 0;
+       var upper = myTrack.cues.length;
+       var mid = 0;
+       var lower = 0;
+
+       if(myTrack.activeCues.length>1){
+         key = myTrack.activeCues[myTrack.activeCues.length-1].startTime;
+         for(lower = 0; (upper-lower)>0; ){//are there fewer than two things in the array?
+           mid = Math.floor(((upper-lower)/2)+lower);
+           if(myTrack.cues[mid].startTime<key){
+             lower = mid+1;
+             cur = lower;
+           }
+           else if(myTrack.cues[mid].startTime>key){
+             upper = mid-1;
+             cur = upper;
+           }
+           else {
+             cur = mid;
+             return;
+           }
+         }
+         // cur = lower;
+         return;
+       }
+       else {
+       //binary search. input: a key: i.e. a timestamp.       //loop invariant: subset: we're maintaining a subset of the original list such that if the key exists, it will be in this sublist.
+       //exit-condition when there is only one element left in the list.
+       //if middle cue's starttime is less than key, subset starts from one to the right of it. if it is greater than the key, subset is one to the left of current element. else it is equal to the key.
+       key =  video.currentTime;
+       for(lower = 0; (upper-lower)>0; ){//are there fewer than two things in the array?
+         mid = Math.floor(((upper-lower)/2)+lower); //*might be problematic
+         if(myTrack.cues[mid].startTime<key){
+           lower = mid+1;
+           cur = lower;
+         }
+         else if(myTrack.cues[mid].startTime>key){
+           upper = mid-1;
+           cur = upper;
+         }
+         else {
+           cur = mid;
+           return;
+         }
+       }
+       // cur = lower; //if it exits, lower has a fair chance of being equal to upper, so it suffices to set it equal to one of the two.
+      }
+       //else if it isn't, it has to search the closest cue that is equal to its time stamp. we can do this with binary search because cue times are ordered, unless there's a built in function
+       //search google: how to find cue based on current video time
+     }
+
+     function altGetClosestCue(myTrack){
+       var key = 0;
+       //binary search. input: a key: i.e. a timestamp.
+       //loop invariant: subset: we're maintaining a subset of the original list such that if the key exists, it will be in this sublist.
+       //exit-condition when there is only one element left in the list.
+       //if middle cue's starttime is less than key, subset starts from one to the right of it. if it is greater than the key, subset is one to the left of current element. else it is equal to the key.
+       var upper = myTrack.cues.length;
+       var mid = 0;
+       var lower = 0;
+       if(myTrack.activeCues.length>1){ //this should never be entered if altNextSub's first condition works as intended
+         key = myTrack.activeCues[myTrack.activeCues.length-1].startTime;
+         for(lower = 0; (upper-lower)>0; ){//are there fewer than two things in the array?
+           mid = Math.floor(((upper-lower)/2)+lower);
+           if(myTrack.cues[mid].startTime<key){
+             lower = mid+1;
+             cur = lower;
+           }
+           else if(myTrack.cues[mid].startTime>key){
+             upper = mid-1;
+             cur = upper;
+           }
+           else {
+             cur = mid;
+             return;
+           }
+         }
+         // cur = lower;
+         return;
+       }
+       else {
+         key =  video.currentTime;
+         for(lower = 0; (upper-lower)>0; ){//are there fewer than two things in the array? [0 1] 2 3 4]
+           // console.log("Mid_t:" + mid);
+           mid = Math.floor(((upper-lower)/2)+lower); //*might be problematic
+           if(myTrack.cues[mid].startTime<= key){ //startTime <= key <= endTime, i.e. key is in the range of the subtitle
+             if(key <= myTrack.cues[mid].endTime){
+               cur = mid;
+               return;
+             }
+             lower = mid+1;
+             cur = lower;
+           }
+           // else if(myTrack.cues[mid].startTime>key){
+           else {
+             upper = mid-1;
+             cur = upper;
+           }
+         }
+      }
+     }
+
+     function finalGetClosestNext(myTrack){
+       // for active cue length > 1 for next sub: search by startTime of activecue[length] if startTime equal, then check if cue is equal to target, if it is return it, else if it isn't then it must be upward, so search index by index upwards.
+       // for active cue length > 1 for prev sub: search
+
+       var upper = myTrack.cues.length;
+       var mid = 0;
+       var lower = 0;
+       var key = 0;
+
+         key =  +video.currentTime.toFixed(3);
+         for(lower = 0; (upper-lower)>0; ){//are there fewer than two things in the array? [0 1] 2 3 4]. lower is the index of the leftmost element, upper is the number of elements in the array subset
+           // console.log("Mid_t:" + mid);
+           mid = Math.floor(((upper-lower)/2)+lower); //*might be problematic
+           if(myTrack.cues[mid].startTime<= key){ //startTime <= key <= endTime, i.e. key is in the range of the subtitle
+             if(key < myTrack.cues[mid].endTime){
+               cur = mid;
+               break;
+             }
+             lower = mid+1;
+             cur = lower;
+           }
+           // else if(myTrack.cues[mid].startTime>key){
+           else {
+             upper = mid-1;
+             cur = upper;
+           }
+         }
+         //this part is to make sure there are no closer subtitles to the key (currentTime) than what we found by binary search approximation
+         var difference = 0;
+         var differencetwo = 0;
+         if(key < myTrack.cues[cur].startTime){
+           while(((myTrack.cues[cur].startTime - key) >0) && ((cur-1)>=0)){ //loop until you find the closest cue from the right
+             difference = myTrack.cues[cur].startTime - key;
+             differencetwo = myTrack.cues[cur-1].startTime - key;
+             if((differencetwo>0) && (differencetwo < difference)) { //**if difference==0, then they have the same start times, in which case I want the one that is farthest to the right, which we found in the active cue search at the beginning of this function
+               cur = cur-1;
+             }
+             else {
+               break;
+             }
+           }
+         }
+         else if(key >= myTrack.cues[cur].startTime){
+           while(((key - myTrack.cues[cur].startTime) > 0) && ((cur+1) < myTrack.cues.length)){ //loop until you find the closest cue from the left
+             difference = key - myTrack.cues[cur].startTime;
+             differencetwo = key - myTrack.cues[cur+1].startTime;
+             if((differencetwo>=0) && (differencetwo <= difference)){ //we want equal in this case because it gets the one with the largest id since cur is incremented
+               cur = cur+1;
+             }
+             else {
+               break;
+             }
+           }
+         }
+         key3 = myTrack.cues[cur].startTime;
+         /* ============ THERE MIGHT STILL BE MULTIPLE CUES WITH THE SAME start time, WE WANT THE ONE FARTHEST TO THE LEFT: =============== */
+         while((myTrack.cues[cur+1].startTime == key3)){
+           if(myTrack.cues[cur+1].startTime == key3){
+             cur++;
+           }
+           else {
+             break;
+           }
+         }
+
+       }
+
+
+     function finalGetClosestPrev(myTrack){
+       // for active cue length > 1 for next sub: search by startTime of activecue[length] if startTime equal, then check if cue is equal to target, if it is return it, else if it isn't then it must be upward, so search index by index upwards.
+       // for active cue length > 1 for prev sub: search
+
+       var upper = myTrack.cues.length;
+       var mid = 0;
+       var lower = 0;
+
+         key =  video.currentTime;
+         var key2 = 0;
+         for(lower = 0; (upper-lower)>0; ){//are there fewer than two things in the array? [0 1] 2 3 4]. lower is the index of the leftmost element, upper is the number of elements in the array subset
+           // console.log("Mid_t:" + mid);
+           mid = Math.floor(((upper-lower)/2)+lower); //*might be problematic
+           if(myTrack.cues[mid].startTime<= key){ //startTime <= key <= endTime, i.e. key is in the range of the subtitle
+             if(key <= myTrack.cues[mid].endTime){
+               cur = mid;
+               break;
+             }
+             lower = mid+1;
+             cur = lower;
+           }
+           // else if(myTrack.cues[mid].startTime>key){
+           else {
+             upper = mid-1;
+             cur = upper;
+           }
+         }
+
+
+         /* ============= MAKING SURE cur IS THE CLOSEST SUB TO KEY ================= */
+         //this part is to make sure there are no closer subtitles to the key (currentTime) than what we found by binary search
+         var difference = 0;
+         var differencetwo = 0;
+         if(key < myTrack.cues[cur].startTime){
+           while(((myTrack.cues[cur].startTime - key) >0) && ((cur-1)>=0)){ //loop until you find the closest cue from the right
+             difference = myTrack.cues[cur].startTime - key;
+             differencetwo = myTrack.cues[cur-1].startTime - key;
+             if(differencetwo <= difference){ //if difference==0, then they have the same start times
+               cur = cur-1;
+             }
+             else {
+               break;
+             }
+           }
+         }
+         else if(key > myTrack.cues[cur].startTime){
+           while(((key - myTrack.cues[cur].startTime) > 0) && ((cur+1) < myTrack.cues.length)){ //loop until you find the closest cue from the left
+             difference = key - myTrack.cues[cur].startTime;
+             differencetwo = key - myTrack.cues[cur+1].startTime;
+             if((differencetwo>=0) && (differencetwo <= difference)){
+               cur = cur+1;
+             }
+             else {
+               break;
+             }
+           }
+         }
+         key2 = myTrack.cues[cur].startTime;
+         /* ============ THERE MIGHT STILL BE MULTIPLE CUES WITH THE SAME start time, WE WANT THE ONE FARTHEST TO THE LEFT: =============== */
+         while( myTrack.cues[cur-1]!=undefined && ((+myTrack.cues[cur-1].startTime.toFixed(1)) == key2.toFixed(1))){ // doing toFixed because the start times of the the adjacent subtitles are so close to each other that they can basically be considered the same start time when key pressing speed is taken into consideration
+           if(((+myTrack.cues[cur-1].startTime.toFixed(1)) == key2.toFixed(1))){
+             cur--;
+           }
+           else {
+             break;
+           }
+         }
+
+     }
+
+     function finalNextSub(){
+       var myTrack = null;
+       var key = +video.currentTime;//.toFixed(3);
+       if(track1.srclang){//shouldn't this be track.srclang?
+       myTrack = document.getElementById("track1").track;
+       }
+       else if(track2.srclang){
+         myTrack = document.getElementById("track2").track;
+       }
+       else {
+         return;
+       }
+       if(video.currentTime >= myTrack.cues[myTrack.cues.length-1].startTime){ //checking for upper bound of subtitles, i.e. can't go to next sub if it's the last subtitle in the video
+         return;
+       }
+       else {
+         var nextCue = myTrack.cues[cur+1];
+         finalGetClosestNext(myTrack);
+         if(myTrack.cues[cur].startTime>key){ //if cur is to the right of current time
+           nextCue = myTrack.cues[cur];
+         }
+         else {
+           nextCue = myTrack.cues[cur+1];
+         }
+
+         if(myTrack.cues.length > 0) {
+           video.currentTime = nextCue.startTime;
+           // video.currentTime = +video.currentTime.toFixed(3);
+           cur++;
+         }
+       }
+     }
+
+
+
+     function finalPrevSub(){
+       var myTrack = null;
+       if(track1.srclang){
+         myTrack = document.getElementById("track1").track;
+         // altGetClosestCue(myTrack);
+       }
+       else if(track2.srclang){
+         myTrack = document.getElementById("track2").track;
+         // altGetClosestCue(myTrack);
+       }
+       else {
+         return;
+       }
+       //if video is currently playing at a time before the first subtitle, do nothing
+       if(video.currentTime <= myTrack.cues[0].startTime){
+         return;
+       }
+       // else if(myTrack.cues[0]===myTrack.activeCues[myTrack.activeCues.length-1]){
+       else if((myTrack.activeCues.length > 0) && (myTrack.cues[0].startTime == myTrack.activeCues[myTrack.activeCues.length-1].startTime)){ //if you're on the first subtitle of the video, prev will just put you at the beginning of that subtitle
+         video.currentTime = myTrack.cues[0].startTime;
+       }
+       else {
+         var prevCue = myTrack.cues[cur-1];
+         finalGetClosestPrev(myTrack);
+         if(video.currentTime <= myTrack.cues[cur].endTime){ // proof by picture :  | <____>    where the prev is a timeline and | is video.currentTime and <____> is the range myTrack.cues[cur]
+           prevCue = myTrack.cues[cur-1];
+           cur--;
+         }
+         else {
+           prevCue = myTrack.cues[cur];
+         }
+         if(myTrack.cues.length > 0) {
+           video.currentTime = prevCue.startTime;
+           // cur--;
+         }
+       }
+     }
+  </script>
+
+</html>
