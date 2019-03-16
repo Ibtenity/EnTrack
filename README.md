@@ -4,11 +4,12 @@ A custom HTML5 video player coded in JavaScript and styled in CSS that allows th
 I wanted to encapsulate anything you would need to use the program into one file for most accessibility and ease of use.
 
 # How to use/Shortcuts
-Just download the repository - the only file you need is the html one. 
-* Left arrow key: → Skim to the previous subtitle cue
-* Right arrow key: -> Skim to the next subtitle cue
-* Down arrow key:     Decrease volume by 5%
-* Up arrow key:       Increase volume by 5%
+Just download the repository - the only file you need is the html one.
+
+* ← Left arrow key: Skim to the previous subtitle cue
+* → Right arrow key: Skim to the next subtitle cue
+* ↓ Down arrow key:     Decrease volume by 5%
+* ↑ Up arrow key:       Increase volume by 5%
 
 * S: Toggle primary subtitle track
 * R: Toggle secondary subtitile track
