@@ -23,9 +23,9 @@ Just download the repository - the only file you need is the html one.
 
 ## Support
 Since this is a browser-based video player, file support depends on the browser. 
-In general, webVTT subtitles are the best subtitles to use. 
+In general, webVTT subtitles are the best subtitle files to use. mp4 files are good, h264 is good. Google Chrome basically supports MKV, but FireFox doesn't. All in all, Google Chrome is the best browser to use with EnTrack, then it's FireFox. Internet Explorer seems to be a lost cause, and I haven't tried it ony any other browsers.
 
-[Here's a link](https://subtitletools.com/convert-to-vtt-online) that can very quickly convert dozens of subtitle files of a multitude of types at once.
+[Here's a link](https://subtitletools.com/convert-to-vtt-online) that can very quickly convert dozens of subtitle files of a multitude of types to webVTT at once.
 
 # Things to Add
 As it is now, I am using Font Awesome 5 Video/Audio icons, which require a CDN (i.e. internet connection) for the icons to be loaded so the icons will not all appear without an internet connection, however the buttons are still there and can be used.
