@@ -58,8 +58,9 @@
           <track id="track2" kind="subtitles" src="" srclang="" label="secondary" mode="showing">
       </video>
 
+      <!-- Text Display -->
       <div id="display-container">
-        <div class="reference" id="second"></div>
+        <div id="second" class="reference"></div> <!--<div class="reference" id="second"></div>-->
         <div id="display" class="display_text remove_text"></div> <!-- ** some visibility initialization issue (or maybe not anymore) -->
       </div>
 
@@ -269,7 +270,7 @@
   		height: 18.5px;
 
   		border-color: transparent transparent transparent steelblue;
-  		transition: 100ms all ease;
+  		transition: 200ms all ease;
   		cursor: pointer;
   		padding: 0;
 
@@ -304,18 +305,6 @@
     .loader {
       height: 20px;
       clear: both;
-    }
-    #second {
-      font-family: Roboto;
-      color: hsla(0,0%,100%,.82);
-      color: hsla(0,0%,100%,.882);
-      height: -webkit-fit-content;
-      height: -moz-fit-content;
-      height: fit-content;
-      width: fit-content;
-      padding: 0px 10px 0px;
-      font-size: .6em;
-      background-color: transparent;
     }
     ::-webkit-media-controls-panel {
       /* background-image: none; */
@@ -407,6 +396,18 @@
       color: #ffe200;
       font-size: 2vw;
       font-family: Roboto;
+    }
+    #second {
+      font-family: Roboto;
+      color: hsla(0,0%,100%,.82);
+      color: hsla(0,0%,100%,.882);
+      height: -webkit-fit-content;
+      height: -moz-fit-content;
+      height: fit-content;
+      width: fit-content;
+      padding: 0px 10px 0px;
+      font-size: .6em;
+      background-color: transparent;
     }
     #display{   /* TK-content */
       background-color: transparent;
@@ -833,6 +834,9 @@
         }
         else if (key.keyCode == '88'){
           subSync("track2", +0.1);
+        }
+        else if (key.keyCode == '35'){ //if 'end' is pressed
+          vid.currentTime = vid.duration;
         }
         else if(key.keyCode == "70"){ //if key pressed is f
           toggleFullScreen();
@@ -1349,7 +1353,7 @@
 
      function finalNextSub(){
        var myTrack = null;
-       var key = +video.currentTime;//.toFixed(3);
+       var key = +video.currentTime.toFixed(3);
        if(track1.srclang){//shouldn't this be track.srclang?
        myTrack = document.getElementById("track1").track;
        }
