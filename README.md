@@ -20,6 +20,7 @@ Just download the repository - the only file you need is the html one.
 * X: Shift secondary subtitle times forward by 0.1 seconds
 * G: Shift primary subtitle times back by 0.1 seconds
 * H: Shift primary subtitle times forward by 0.1 seconds
+* P: Copy video title, current subtitle timestamp and text to clipboard
 
 ## Support
 Since this is a browser-based video player, file support depends on the browser. 
