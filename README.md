@@ -30,8 +30,8 @@ In general, webVTT subtitles are the best subtitle files to use. mp4 files are g
 # Things to Add
 As it is now, I am using Font Awesome 5 Video/Audio icons, which require a CDN (i.e. internet connection) for the icons to be loaded so the icons will not all appear without an internet connection, however the buttons are still there and can be used.
 I've added a pure CSS alternative for the play/pause button, but other pure CSS/offline solutions are still needed for the:
-* Audio icon
-* Fullscreen icon
+* Audio icon (pure CSS)
+* Fullscreen icon (pure CSS)
 
 # Things to Modify
 Two play/pause button versions exist on the controls bar, pure CSS and FA icons. One of the two should be removed/hidden.
