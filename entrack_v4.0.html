@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.7.0/css/all.css' integrity='sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ' crossorigin='anonymous'>
-    <title>Custom HTML5 Video Player</title>
+    <title>EnTrack V4.0</title>
   </head>
 
   <!-- From: https://github.com/IIIIllllIIIIllllIIIIllllIIIIllllIIIIll/rikaikun/issues/56
@@ -650,21 +650,21 @@
       btn2.classList.toggle("paused");
     }
 
-      var vidindex = 0;
-      var video = document.getElementById("video1");
-      var cur = 0;
-      document.getElementById('nextsub').addEventListener('click', altNextSub);
-      document.getElementById('prevSub').addEventListener('click', prevSub);
-      document.getElementById('hidesubs').addEventListener('click', hideSubs);
-      var elem = document.getElementById("display");
+    var vidindex = 0;
+    var video = document.getElementById("video1");
+    var cur = 0;
+    document.getElementById('nextsub').addEventListener('click', altNextSub);
+    document.getElementById('prevSub').addEventListener('click', prevSub);
+    document.getElementById('hidesubs').addEventListener('click', hideSubs);
+    var elem = document.getElementById("display");
 
 
-      // Functions that set sources =======================================================================================================================
-      function GetFileName(){ //Adapted from: https://forums.asp.net/t/2027451.aspx?How+to+get+file+name+selected+in+input+type+file+
-        var fileInput = document.getElementById('file');
-        var fileName = fileInput.files[vidindex].name;
-        document.getElementById("filename").innerHTML = fileName;
-      }
+    // Functions that set sources =======================================================================================================================
+    function GetFileName(){ //Adapted from: https://forums.asp.net/t/2027451.aspx?How+to+get+file+name+selected+in+input+type+file+
+      var fileInput = document.getElementById('file');
+      var fileName = fileInput.files[vidindex].name;
+      document.getElementById("filename").innerHTML = fileName;
+    }
 
       function nextVid(input) {
           //THE METHOD THAT SHOULD SET the SOURCE of the NEXT VID in the PLAYLIST
@@ -776,6 +776,58 @@
         }
       }
 
+      function getSubInfo(){ //Gets preliminary info of the current active sub to make a Sentence Card
+        var myTrack = document.getElementById("track1").track;
+        if(myTrack.activeCues!=null && myTrack.activeCues.length >0){ //might need to be track.track.activeCues[0].
+          var curtimetext;
+          var sentence = myTrack.activeCues[myTrack.activeCues.length-1].text;
+          var currentTime = myTrack.activeCues[myTrack.activeCues.length-1].startTime;
+          var curmins = Math.floor(currentTime / 60);
+          var cursecs = Math.floor(currentTime - curmins * 60);
+          if(cursecs < 10){ cursecs = "0"+cursecs; }
+          if(curmins < 10){ curmins = "0"+curmins; }
+          curtimetext = curmins+":"+cursecs;
+
+          //var fileInput = document.getElementById('file');
+          //var fileName = fileInput.files[vidindex].name;
+          fileName = document.getElementById("filename").innerHTML;
+          var info = sentence + " [" + fileName + " " + curtimetext + "]";
+
+          //https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
+          var textArea = document.createElement("textarea");
+
+          textArea.style.position = 'fixed';
+          textArea.style.top = 0;
+          textArea.style.left = 0;
+          textArea.style.width = '2em';
+          textArea.style.height = '2em';
+          // We don't need padding, reducing the size if it does flash render.
+          textArea.style.padding = 0;
+          // Clean up any borders.
+          textArea.style.border = 'none';
+          textArea.style.outline = 'none';
+          textArea.style.boxShadow = 'none';
+          textArea.style.background = 'transparent';
+          textArea.value = info;
+
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+
+          try {
+            var successful = document.execCommand('copy');
+            var msg = successful ? 'successful' : 'unsuccessful';
+            console.log('Copying text command was ' + msg);
+          } catch (err) {
+            console.log('Oops, unable to copy');
+          }
+
+          document.body.removeChild(textArea);
+
+          document.execCommand("copy");
+        }
+      }
+
       window.addEventListener("keydown", catchKeydown, false);
       function catchKeydown(key){
         if(key.keyCode == '83'){ //if S is pressed
@@ -829,11 +881,14 @@
         else if (key.keyCode =='72'){ //if h is pressed
           subSync("track1", +0.1);
         }
-        else if(key.keyCode == '90'){
+        else if(key.keyCode == '90'){ //if z is pressed
           subSync("track2", -0.10);
         }
-        else if (key.keyCode == '88'){
+        else if (key.keyCode == '88'){ //if x is pressed
           subSync("track2", +0.1);
+        }
+        else if (key.keyCode == '80'){ //if p is pressed
+          getSubInfo();
         }
         else if (key.keyCode == '35'){ //if 'end' is pressed
           vid.currentTime = vid.duration;
@@ -1282,8 +1337,8 @@
 
 
      function finalGetClosestPrev(myTrack){
-       // for active cue length > 1 for next sub: search by startTime of activecue[length] if startTime equal, then check if cue is equal to target, if it is return it, else if it isn't then it must be upward, so search index by index upwards.
-       // for active cue length > 1 for prev sub: search
+       // for active cue length > 1 for next sub: search by startTime of activecue[length] if startTime equal,
+       // then check if cue is equal to target, if it is return it, else if it isn't then it must be upward, so search index by index upwards.
 
        var upper = myTrack.cues.length;
        var mid = 0;
@@ -1388,6 +1443,7 @@
 
      function finalPrevSub(){
        var myTrack = null;
+       var key = +video.currentTime.toFixed(3);
        if(track1.srclang){
          myTrack = document.getElementById("track1").track;
          // altGetClosestCue(myTrack);
@@ -1407,10 +1463,13 @@
        else if((myTrack.activeCues.length > 0) && (myTrack.cues[0].startTime == myTrack.activeCues[myTrack.activeCues.length-1].startTime)){ //if you're on the first subtitle of the video, prev will just put you at the beginning of that subtitle
          video.currentTime = myTrack.cues[0].startTime;
        }
+       else if(key > myTrack.cues[myTrack.cues.length-1].endTime){ //if you're at a time after the last subtitle, go back to to the last subtitle
+         video.currentTime = myTrack.cues[myTrack.cues.length-1].startTime;
+       }
        else {
          var prevCue = myTrack.cues[cur-1];
          finalGetClosestPrev(myTrack);
-         if(video.currentTime <= myTrack.cues[cur].endTime){ // proof by picture :  | <____>    where the prev is a timeline and | is video.currentTime and <____> is the range myTrack.cues[cur]
+         if(key <= myTrack.cues[cur].endTime){ // proof by picture :  | <____>    where the prev is a timeline and | is video.currentTime and <____> is the range myTrack.cues[cur]
            prevCue = myTrack.cues[cur-1];
            cur--;
          }
@@ -1418,7 +1477,7 @@
            prevCue = myTrack.cues[cur];
          }
          if(myTrack.cues.length > 0) {
-           video.currentTime = prevCue.startTime;
+           video.currentTime = prevCue.startTime + 0.01; //added the +0.01 to tie break subs that end at the exact same time another starts**
            // cur--;
          }
        }
