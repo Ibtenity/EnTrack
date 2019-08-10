@@ -13,7 +13,7 @@ Just download the repository - the only file you need is the html one.
 
 * S: Toggle primary subtitle track
 * R: Toggle secondary subtitile track
-* A: Replay video from beginning of current subtitlie cue
+* A: Replay video from beginning of current subtitle cue
 * M: mute
 * F: toggle fullscreen
 * Z: Shift secondary subtitle times back by 0.1 seconds (100 milliseconds)
