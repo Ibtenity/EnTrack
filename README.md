@@ -33,6 +33,7 @@ As it is now, I am using Font Awesome 5 Video/Audio icons, which require a CDN (
 I've added a pure CSS alternative for the play/pause button, but other pure CSS/offline solutions are still needed for the:
 * Audio icon (pure CSS)
 * Fullscreen icon (pure CSS)
+* Onscreen feedback for when primary/secondary subtitle track offset times are changed
 
 # Things to Modify
 Two play/pause button versions exist on the controls bar, pure CSS and FA icons. One of the two should be removed/hidden.
