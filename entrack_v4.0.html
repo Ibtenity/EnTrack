@@ -520,6 +520,8 @@
         var input = document.getElementById("file");
         if(vidindex<input.files.length){ //playlist handling
           vidindex++;
+          subindex++;
+          subindex2++;
           nextVid(input)
           nextSubPrimary(document.getElementById("file2"));
           nextSubSecondary(document.getElementById("file3"));
@@ -650,6 +652,8 @@
       btn2.classList.toggle("paused");
     }
 
+    var subindex = 0;
+    var subindex2 = 0;
     var vidindex = 0;
     var video = document.getElementById("video1");
     var cur = 0;
@@ -660,11 +664,12 @@
 
 
     // Functions that set sources =======================================================================================================================
-    function GetFileName(){ //Adapted from: https://forums.asp.net/t/2027451.aspx?How+to+get+file+name+selected+in+input+type+file+
-      var fileInput = document.getElementById('file');
-      var fileName = fileInput.files[vidindex].name;
-      document.getElementById("filename").innerHTML = fileName;
-    }
+      var fileName;
+      function GetFileName(){ //Adapted from: https://forums.asp.net/t/2027451.aspx?How+to+get+file+name+selected+in+input+type+file+
+        var fileInput = document.getElementById('file');
+        fileName = fileInput.files[vidindex].name;
+        document.getElementById("filename").innerHTML = fileName;
+      }
 
       function nextVid(input) {
           //THE METHOD THAT SHOULD SET the SOURCE of the NEXT VID in the PLAYLIST
@@ -680,10 +685,10 @@
           }
       }
       function nextSubPrimary(input2){
-        if (input2.files && input2.files[vidindex]) {
-            var file = input2.files[vidindex]; //gets the first file, if multiple files are chosen
+        if (input2.files && input2.files[subindex]) {
+            var file = input2.files[subindex]; //gets the first file, if multiple files are chosen
             var url = URL.createObjectURL(file);
-            console.log(url + " vidindex=" + vidindex);
+            console.log(url + " subindex=" + subindex);
             var reader = new FileReader();
             reader.onload = function() {
                 track.src = url; //makes src of the track element equal to url
@@ -695,10 +700,10 @@
       }
 
       function nextSubSecondary(input3){
-        if (input3.files && input3.files[vidindex]) { //what does this line do? probably checks if ?? and  at least one file is selected
-            var file = input3.files[vidindex]; //gets the first file, if multiple files are chosen
+        if (input3.files && input3.files[subindex2]) { //what does this line do? probably checks if ?? and  at least one file is selected
+            var file = input3.files[subindex2]; //gets the first file, if multiple files are chosen
             var url = URL.createObjectURL(file);
-            console.log(url + " vidindex=" + vidindex);
+            console.log(url + " subindex2=" + subindex2);
             var reader = new FileReader();
             reader.onload = function() {
                 track2.src = url; //makes src of the track element equal to url
@@ -726,40 +731,49 @@
               reader.readAsDataURL(file);
           }
       }
-
+      var primaryReferenceTime = 0;
       var track = document.getElementById("track1");
       document.getElementById("file2").addEventListener("input", readURL2, false);
-      function readURL2(input) {
+      function readURL2(input) {  //https://developer.mozilla.org/en-US/docs/Web/API/Blob#Example_for_creating_a_URL_to_a_typed_array_using_a_blob
         input = input.target;
           //THE METHOD THAT SHOULD SET THE PRIMARY SUBTITLE TRACK SOURCE
-          if (input.files && input.files[vidindex]) {
-              var file = input.files[vidindex]; //gets the first file, if multiple files are chosen
+          if (input.files && input.files[subindex]) {
+              var file = input.files[0]; //gets the first file, if multiple files are chosen
               var url = URL.createObjectURL(file);
-              console.log(url + " vidindex=" + vidindex);
+              console.log(url + " subindex=" + subindex);
               var reader = new FileReader();
               reader.onload = function() {
                   track.src = url; //makes src of the track element equal to url
                   track.srclang = url; //this line may not be needed
                   track.track.mode = "hidden";
+                  subindex = 0;
               }
               reader.readAsDataURL(file);
           }
       }
 
+      document.getElementById("track1").addEventListener("load", function () {
+        var track = document.getElementById("track1");
+        primaryReferenceTime = track.track.cues[0].startTime;
+      });
+
+      var secondaryReferenceTime = 0;
       var track2 = document.getElementById("track2");
       document.getElementById("file3").addEventListener("input", readURL3, false);
       function readURL3(input) {
         input = input.target;
           //THE METHOD THAT SHOULD SET THE SECONDARY SUBTITLE TRACK SOURCE
-          if (input.files && input.files[vidindex]) { //what does this line do? probably checks if ?? and  at least one file is selected
-              var file = input.files[vidindex]; //gets the first file, if multiple files are chosen
+          if (input.files && input.files[subindex2]) { //what does this line do? probably checks if ?? and  at least one file is selected
+              var file = input.files[0]; //gets the first file, if multiple files are chosen
               var url = URL.createObjectURL(file);
-              console.log(url + " vidindex=" + vidindex);
+              console.log(url + " subindex2=" + subindex2); //**
               var reader = new FileReader();
               reader.onload = function() {
                   track2.src = url; //makes src of the track element equal to url
                   track2.srclang = url; //this line may not be needed
                   track2.track.mode = "hidden";
+                  secondaryReferenceTime = track2.track.cues[0].startTime;
+                  subindex2 = 0;
               }
               reader.readAsDataURL(file);
           }
@@ -767,13 +781,21 @@
 
 
       //Video control functions ===================================================================================================================================================
+      var netOffset = 0;
       function subSync(track, offset){
         // var myTrack = vid.textTracks[0].cues;
         var myTrack = document.getElementById(track).track.cues;
         for(var i = 0; i < myTrack.length; i++){
-          myTrack[i].startTime = +(myTrack[i].startTime + offset).toFixed(3); //fixes float addition error that messes up skimming by subtitle and how subs appear on screen a millisecond too late
-          myTrack[i].endTime = +(myTrack[i].endTime + offset).toFixed(3);
+          myTrack[i].startTime = parseFloat(myTrack[i].startTime + offset).toFixed(3); // potentially fixes float addition error that messes up skimming by subtitle and how subs appear on screen a millisecond too late
+          myTrack[i].endTime = parseFloat(myTrack[i].endTime + offset).toFixed(3);
         }
+        //netOffset += offset; //** might be a problem because offset doesn't differentiate between primary and secondary subtitle, might need to have two vars, one for primary and one for secondary offset, and some if cases
+          // this netOffset needs to be reset every time a new subtitle is loaded. That's why I think it would be better defined as the difference in times before original subtitls and w/e the current sub start time is
+        netOffset = (myTrack[0].startTime - primaryReferenceTime);
+        //referenced: https://www.w3schools.com/JSREF/tryit.asp?filename=tryjsref_win_settimeout2
+        var x = document.getElementById("filename");
+        x.innerHTML = fileName + " " + netOffset.toFixed(1)+"s offset";
+        setTimeout(function(){ x.innerHTML=fileName }, 2000); // janky way of doing it, preferably would like to have thing I do last for 2000 not have an offset
       }
 
       function getSubInfo(){ //Gets preliminary info of the current active sub to make a Sentence Card
@@ -879,13 +901,19 @@
           subSync("track1", -0.10);
         }
         else if (key.keyCode =='72'){ //if h is pressed
-          subSync("track1", +0.1);
+          subSync("track1", +0.10);
         }
         else if(key.keyCode == '90'){ //if z is pressed
           subSync("track2", -0.10);
         }
-        else if (key.keyCode == '88'){ //if x is pressed
-          subSync("track2", +0.1);
+        else if (key.keyCode == '88'){ //if x is pressed ** There may be a problem with how the adding and subtracting is happening, as is error builds up or something with the adding and such, may cause some subtitle end times to end before the starttime
+          subSync("track2", +0.10);
+        }
+        else if (key.keyCode == '81'){ //if q is pressed
+          subSync("track1", -1.0);
+        }
+        else if (key.keyCode == '87'){ //if q is pressed
+          subSync("track1", +1.0);
         }
         else if (key.keyCode == '80'){ //if p is pressed
           getSubInfo();
@@ -1295,6 +1323,9 @@
              cur = upper;
            }
          }
+
+         // Makes sure cur isn't out of bounds. i.e. for cases when get closest is called before the first subtitle appears on the screen
+         if (cur<0) cur = 0;
          //this part is to make sure there are no closer subtitles to the key (currentTime) than what we found by binary search approximation
          var difference = 0;
          var differencetwo = 0;

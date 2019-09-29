@@ -1,0 +1,2 @@
+If you're on a time before the first subtitle, clicking the right arrow key to go to the first subtitle doesn't work. [This has now been fixed]
+Subtitle playlist linked to the video number you are on (the video playlist index), causing subtitle-to-video syncing issues. [Fixed]
