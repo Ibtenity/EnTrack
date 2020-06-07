@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <link rel='stylesheet' href='https://use.fontawesome.com/releases/v5.7.0/css/all.css' integrity='sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ' crossorigin='anonymous'>
+    <title>EnTrack V5.0</title>
+  </head>
+
+  <!-- From: https://github.com/IIIIllllIIIIllllIIIIllllIIIIllllIIIIll/rikaikun/issues/56
+  Chrome changed something a bit ago so now if you want to be able to use an
+  extension on file:// url you have to go to the extension management page (where
+  you would uninstall and allow in incognito mode) and manually allow rikaikun to
+  access file urls.
+   -->
+
+  <!--THE DIALOG BUTTON TO SET VIDEO SOURCE-->
+  <div class="loader">
+    <input id="file" class="inputfile" type='file' name="uploadfile" multiple> <!-- </div> -->
+    <!-- <button type="button" name="button"> -->
+      <label for="file" class="blah">Choose video</label>
+    <!-- </button> -->
+
+  <!--THE DIALOG BUTTON TO SET THE SUBTITLE/TRACK SOURCE--> <!-- <div class="loader"> -->
+    <input id="file2" class="inputfile" type='file' name="uploadfile" multiple> <!-- </div> -->
+    <!-- <button type="button" name="button"> -->
+      <label for="file2" class="blah">Choose track</label>
+    <!-- </button> -->
+
+    <!--THE DIALOG BUTTON TO SET THE 2nd SUBTITLE/TRACK SOURCE-->
+    <input id="file3" class="inputfile" type='file' name="uploadfile" multiple>
+    <!-- <button type="button" name="button"> -->
+      <label for="file3" class="blah">Choose track 2</label>
+    <!-- </button> -->
+
+    <button id="prevSub" type="button" name="button">
+        <label for="prevSub" class="blah">Skim to prev subtitle</label>
+    </button>
+      <!-- **texttrack mode; **Array.findIndex -->
+    <button id="nextsub" type="button" name="button">
+      <label for="nextsub" class="blah">Skim to next subtitle</label>
+    </button>
+
+    <button id="hidesubs" type="button" name="button">
+      <label for="hidesubs" class="blah">Toggle primary subtitles</label>
+    </button>
+    <span id="filename"></span>
+  </div>
+
+
+  <!--THE VIDEO ELEMENT-->
+  <div class="container" id="ccontainer">
+    <div class="video-container">
+      <video id="video1" preload="metadata" >
+          <!-- <source src="BnHA.mkv" type="video/mp4" /> -->
+          <source type="video/mp4" src=""/>
+          <track id="track1" kind="subtitles" src="" srclang="" label="primary" mode="showing" default> <!-- for now subtitles have to be webVTT format -->
+          <track id="track2" kind="subtitles" src="" srclang="" label="secondary" mode="showing">
+      </video>
+
+      <!-- Text Display -->
+      <div id="display-container">
+        <div id="second" class="reference"></div> <!--<div class="reference" id="second"></div>-->
+        <div id="display" class="display_text remove_text"></div> <!-- ** some visibility initialization issue (or maybe not anymore) -->
+      </div>
+
+      <!-- CONTROLS -->
+      <div id="controls_bar">
+    		<button><div id="playButton" class="button"></div></button>
+    		<button id="pbutton"><i class="pbutton fas fa-play" style="cursor:pointer"></i></button>
+    		<button id="vbutton"><i class='vbutton fas fa-volume-up'></i></button>
+    		<div id="vbox"><input id="volSlider" class="seeker" type="range" min="0" max="20" value="20" step="1"></div>
+    		<div id="currentTime">00:00</div><div id="durationTime">/&nbsp;00:00</div>
+        <div class="imcst seektrack" id="seektrack">
+          <div class="seekbar">
+            <div class="progressbar" id="pbar"></div>
+            <div class="progressafter">
+            </div>
+          </div>
+          <div class="dot"></div>
+        </div>
+
+    		<button id="fbutton"><i class='fbutton fas fa-expand'></i></button>
+    	</div>
+    </div>
+  </div>
+
+
+  <style>
+    /* Possible last resort solution https://stackoverflow.com/questions/18389224/how-to-style-html5-range-input-to-have-different-color-before-and-after-slider/38163892#38163892 */
+    /* Seeker progress fill adapted from: https://jsfiddle.net/48eL125o/4/ */
+    .inputfile {  /* adapted from: https://tympanus.net/codrops/2015/09/15/styling-customizing-file-inputs-smart-way/ */
+      width: 0.1px;
+      height: 0.1px;
+      opacity: 0;
+      overflow: hidden;
+      position: absolute;
+      z-index: -1;
+      cursor: pointer;
+    }
+    label {
+      cursor: pointer;
+    }
+    .inputfile+label {
+      color: yellow;
+      /* background-color: black; */
+      display: inline-block;
+    }
+
+    .inputfile+label:hover {
+      opacity: 0.8;
+    }
+  	.fas {
+  		font-size: 16px;
+      background-color: transparent;
+  	}
+    .fas:hover {
+      opacity: 0.8;
+    }
+    #seektrack{
+      position: relative;
+      background: #000;
+      /* border:#666 1px solid; */
+      height:4px;
+      cursor: pointer;
+      width: 100%;
+      transition: width 500ms;
+      -webkit-transition: width 500ms; /* Safari 3.1 to 6.0 */
+      margin: 0px 5px;
+    }
+    .progressafter{
+      position:absolute;
+      background: orange;
+      height: 100%;
+    }
+    .seeker {
+      background-color: #dedede;
+      background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, color-stop(0%, #ff1100), color-stop(100%, #ff1100));
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+    }
+    .dot {
+      left: initial;
+      height: 12px;
+      width: 12px;
+      margin-top: -4px;
+      background-color: #bbb;
+      border-radius: 50%;
+      /* display: inline-block; */
+      display: block;
+      position: absolute;
+    }
+    #volSlider:hover, #volSlider:focus {
+      width: 100%;
+      visibility: inherit;
+    }
+  	#volSlider:not(:hover), #volSlider:not(:focus) {
+  		width: 100%;
+  		/* opacity: 0; */
+  		visibility: inherit;
+  		transition: 400ms;
+  		-webkit-transition: 400ms; /* Safari 3.1 to 6.0*/
+  		/* transition:visibility 0s linear 0.5s,opacity 0.5s linear; */
+  	}
+  	#vbox {
+  		padding: 0 0.5em;
+  		width: 0px;
+  		height: 100%;
+  		align-items: center;
+  		position: relative;
+  		display: flex;
+  		visibility: hidden;
+  		transition: width 500ms;
+  		-webkit-transition: width 500ms; /* Safari 3.1 to 6.0 */
+      background-color: transparent;
+  	}
+  	#vbutton:hover + #vbox, #vbox:hover{
+  		width: 100px;
+  		visibility: visible;
+  	}
+  	/* #volSlider:hover{
+  		visibility: visible;
+  		opacity:1
+  	} */
+    span {
+      color: white;
+      background-color: transparent;
+      font-family: "YouTube Noto",Roboto,Arial,Helvetica,sans-serif;
+    }
+  	#currentTime {
+  		padding-left: 0.5em;
+      color: white;
+      background-color: transparent;
+      font-family: "YouTube Noto",Roboto,Arial,Helvetica,sans-serif;
+      user-select: text;
+  	}
+  	#durationTime{
+  		padding-right: 0.5em;
+      color: white;
+      background-color: transparent;
+      font-family: "YouTube Noto",Roboto,Arial,Helvetica,sans-serif;
+      user-select: text;
+      padding-left: 4px;
+  	}
+  	#controls_bar{
+      width: 100%;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+  		height: 2em;
+      background-color: rgba(43,51,63,.7);
+  		display: flex;
+      opacity: 1;
+  		align-items: center;
+      transform: translateY(100%);
+  	}
+  	button {
+  		cursor: pointer;
+  		min-width: 41px;
+  		background-color: transparent;
+  		border: none;
+  		color: whitesmoke;
+  	}
+  	input[type='range'] {
+  		-webkit-appearance: none !important;
+  		height:4px;
+  		cursor: pointer;
+  		width: 100%;
+  		transition: width 500ms;
+  		-webkit-transition: width 500ms; /* Safari 3.1 to 6.0 */
+  	}
+    .seekbar {
+      background: #000;
+      height:100%;
+      cursor: pointer;
+      width: 100%;
+      transition: width 500ms;
+      -webkit-transition: width 500ms; /* Safari 3.1 to 6.0 */
+      position: absolute;
+    }
+    .progressbar { /* child of seekbar */
+      display: block;
+      height: inherit;
+      width: 0%;
+      background-color: red;
+      position: absolute;
+    }
+  	input[type='range']::-webkit-slider-thumb {
+  	    -webkit-appearance: none !important;
+  	    background: #FFF;
+  	    height:10px;
+  	    width:10px;
+  			border-radius:100%;
+  			cursor:pointer;
+  	}
+  	#playButton {
+  		cursor: pointer;
+  		-ms-flex: none;
+  		flex: none;
+  	}
+  	.pbutton {
+  		transition: 100ms all ease;
+  	}
+  	.button {/* adapted from https://css-tricks.com/making-pure-css-playpause-button/ */
+  		border: 0;
+  		background: transparent;
+  		box-sizing: border-box;
+  		width: 0;
+  		height: 18.5px;
+
+  		border-color: transparent transparent transparent steelblue;
+  		transition: 200ms all ease;
+  		cursor: pointer;
+  		padding: 0;
+
+      border-style: double;
+      border-width: 0px 0 0px 15px;
+
+  	}
+  	.button.paused {
+      border-style: solid;
+      border-width: 9.25px 0 9.25px 15px;
+  	}
+  	.button:hover {
+  		border-color: transparent transparent transparent whitesmoke;
+  	}
+  	button:focus, input:focus {
+  		outline:0;
+  	}
+  </style>
+
+<!-- CSS -->
+  <style media="screen">
+    .blah {
+      color: yellow;
+      margin: 0 4px 0 4px;
+      cursor: pointer;
+    }
+    * {
+      margin: 0;
+      padding: 0;
+      background: black;
+    }
+    .loader {
+      height: 20px;
+      clear: both;
+    }
+    ::-webkit-media-controls-panel {
+      /* background-image: none; */
+      background-size: 0.14px;
+    }
+    video::cue{
+      /* background-color: transparent; */
+      display: none;
+      -ms-user-select: text;
+      -moz-user-select: text;
+      -webkit-user-select: text;
+      text-shadow: 2px 2px 1px #000,-2px -2px 1px #000,-2px 2px 1px #000,2px -2px 1px #000;
+      text-shadow: 1px 1px 1px #000,-1px -1px 1px #000,-1px 1px 1px #000,1px -1px 1px #000;
+
+      /* user-select: text; */
+    }
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: calc(100vh - 20px);
+      /* background-color: DodgerBlue;*/
+      background-color: black;
+    }
+
+    .container>.video-container {
+      background-color: inherit;
+      color: white;
+      width: 100vw;
+      height: 56.25vw;
+      max-height: calc(100vh - 52px);
+      margin-bottom: 32px;
+      position: relative;
+      /* background-color: #f1f1f1; */
+    }
+    .container>.video-container>video{
+      width: 100%;
+      height: 100%;
+    }
+    #display-container { /*bottom bar*/
+
+      background-color: transparent;
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      color: #fff;
+      text-align: center;
+      font-family: textbook,serif;
+      font-weight: 400;
+      pointer-events: none;
+
+      -webkit-user-select: text!important;
+      -moz-user-select: text!important;
+      -ms-user-select: text!important;
+      user-select: text!important;
+
+      text-shadow: 2px 2px 1px #000, -2px -2px 1px #000, -2px 2px 1px #000, 2px -2px 1px #000;
+      text-shadow: 1px 1px 1px #000, -1px -1px 1px #000, -1px 1px 1px #000, 1px -1px 1px #000;
+      display: -ms-flexbox;
+      display: flex;
+
+      -ms-flex-direction: column;
+      flex-direction: column;
+      -ms-flex-pack: end;
+      justify-content: flex-end;
+      -ms-flex-align: center;
+      align-items: center;
+
+      -webkit-transition: opacity .5s ease;
+      -o-transition: opacity .5s ease;
+      transition: opacity .5s ease;
+    }
+    .text-area {
+      width: -webkit-fit-content;
+      width: -moz-fit-content;
+      width: fit-content;
+
+      display: -ms-flexbox;
+      display: flex;
+
+      -ms-flex-align: end;
+      align-items: flex-end;
+
+      pointer-events: auto;
+      background-color: transparent;
+      margin: auto;
+      color: #ffe200;
+      font-size: 2vw;
+      font-family: Roboto;
+    }
+    #second {
+      font-family: Roboto;
+      color: hsla(0,0%,100%,.82);
+      color: hsla(0,0%,100%,.882);
+      height: -webkit-fit-content;
+      height: -moz-fit-content;
+      height: fit-content;
+      width: fit-content;
+      padding: 0px 10px 0px;
+      font-size: .6em;
+      background-color: transparent;
+    }
+    #display{   /* TK-content */
+      background-color: transparent;
+      pointer-events: none;
+      padding: 12px 32px 80px;
+      font-size: 1.25em;
+      color: hsla(0,0%,100%,.882);
+      opacity: 1;
+
+      justify-content: center;
+      display: -ms-flexbox;
+      display: flex;
+      -ms-flex-direction: column;
+      flex-direction: column;
+      -ms-flex-pack: center;
+      -webkit-transition: opacity .5s ease;
+      -o-transition: opacity .5s ease;
+      transition: opacity .5s ease;
+      -webkit-font-feature-settings: "kern" 1;
+      -ms-font-feature-settings: "kern" 1;
+      -o-font-feature-settings: "kern" 1;
+      font-feature-settings: "kern" 1;
+      -webkit-font-kerning: normal;
+      font-kerning: normal;
+    }
+    video::-webkit-media-controls-current-time-display, video::-webkit-media-controls-time-remaining-display {
+      user-select: text;
+    }
+    video::-webkit-media-controls-mute-button {
+      cursor: pointer;
+    }
+    video::-webkit-media-controls-fullscreen-button {
+      cursor: pointer;
+    }
+    video::-webkit-media-controls-volume-slider{
+      /* , video::-webkit-media-controls-timeline::-webkit-media-slider-container { */
+      cursor: pointer;
+    }
+    video::-webkit-media-controls-play-button {
+      cursor: pointer;
+    }
+  </style>
+
+<!-- JAVASCRIPT -->
+  <script>
+    var vid, playbtn, seekslider, curtimetext, durtimetext, mutebtn, volumeslider, fullscreenbtn, playButton, pbutton, oldClass, newClass, fOld, fNew, vOld, vNew, dur, oldvol, oldSound, tagRule,
+        progressbar, seekbar, mousedown, progressafter, seeker, dot, vc, isfullscreen, button, myclonedTrack, myclonedTrack2;
+
+    function intializePlayer(){//constructor
+      // Set object references
+      oldClass = "fa-pause"; //pbutton fas fa-play
+      newClass = "fa-play";
+      fOld = "fa-expand";
+      fNew = "fa-compress";
+      vOld = "fa-volume-up";
+      vNew = "fa-volume-mute";
+      oldSound = "fa-volume-up";
+
+      vid = document.getElementById("video1");
+      playbtn = document.querySelector(".pbutton");
+      seekslider = document.getElementById("seeker");
+      curtimetext = document.getElementById("currentTime");
+      durtimetext = document.getElementById("durationTime");
+      volumeslider = document.querySelector(".seeker");
+      fullscreenbtn = document.querySelector(".fbutton");
+      playButton = document.getElementById("pbutton");
+      pbutton = document.getElementById("pbutton");
+      mutebtn = document.getElementById("vbutton");
+      progressbar = document.querySelector(".progressbar");
+      progressafter = document.querySelector(".progressafter");
+      dot = document.querySelector(".dot");
+      seekbar = document.querySelector(".seektrack");
+      vc = document.getElementById("ccontainer");
+      button = document.querySelector(".button");
+
+      // Add event listeners
+      vid.addEventListener("click",togglePlay, false);
+      playButton.addEventListener("click", togglePlay, false);
+      pbutton.addEventListener("click", togglePlay, false);
+      vid.addEventListener("timeupdate",seektimeupdate,false);
+      mutebtn.addEventListener("click",vidmute,false);
+      volumeslider.addEventListener("input",setvolume,false);
+      fullscreenbtn.addEventListener("click", toggleFullScreen, false);
+      seekbar.addEventListener("click", vidSeek);
+
+      isfullscreen = false;
+      mousedown = false;
+      document.addEventListener('mousemove', (e) => mousedown && vidSeek(e));
+      document.addEventListener('mouseup', () => mousedown = false);
+      seekbar.addEventListener('mousedown', function() {
+        event.preventDefault();
+        mousedown = true;
+      });
+
+      vid.addEventListener('loadeddata', function() {                 //video is loaded and can be played
+        playbtn.className = "pbutton fas fa-pause";
+        document.querySelector(".button").classList.remove("paused"); //updating animated CSS play button
+        var durmins = Math.floor(vid.duration / 60);
+        var dursecs = Math.floor(vid.duration - durmins * 60);
+        if(dursecs < 10){ dursecs = "0"+dursecs; }
+        if(durmins < 10){ durmins = "0"+durmins; }
+        durtimetext.innerHTML = "/&nbsp;"+durmins+":"+dursecs;
+        GetFileName();
+      }, false);
+
+      document.querySelector('video').addEventListener('ended',function(){ // On video end:
+        //**
+        playbtn.className = "pbutton fas fa-play";
+        document.querySelector(".button").classList.toggle("paused");
+        var input = document.getElementById("file");
+        if(vidindex<input.files.length){ //playlist handling
+          vidindex++;
+          subindex++;
+          subindex2++;
+          nextVid(input)
+          nextSubPrimary(document.getElementById("file2"));
+          nextSubSecondary(document.getElementById("file3"));
+        }
+      }, false);
+
+      // **var myTrack = track.track; //for setting the id for each subtitle to its index value in its cue list
+      // for(var i = 0; i<myTrack.cues.length; i++){
+      //   myTrack.cues[i].id = i;
+      // }
+
+    }
+
+    window.onload = intializePlayer; //constructor-call
+
+    function getRuleWithSelector(selector) {
+      var numSheets = document.styleSheets.length,
+      numRules,
+      sheetIndex,
+      ruleIndex;
+      // Search through the style sheets.
+      for (sheetIndex = 0; sheetIndex < numSheets; sheetIndex += 1) {
+        numRules = document.styleSheets[sheetIndex].cssRules.length;
+        for (ruleIndex = 0; ruleIndex < numRules; ruleIndex += 1) {
+          if (document.styleSheets[sheetIndex].cssRules[ruleIndex].selectorText === selector) {
+            return document.styleSheets[sheetIndex].cssRules[ruleIndex];
+          }
+        }
+      }
+      // If we get this far, then the rule doesn't exist, So the return value is undefined.
+    }
+
+    function seekprogress(){
+      var min = seekslider.min,
+          max = seekslider.max,
+          val = Math.round(vid.currentTime * (dur / vid.duration));
+      seekslider.style.backgroundSize = ((val - min) * 100 / (max - min)) + '% 100%';
+    }
+
+    function vidSeek(e){ //https://www.youtube.com/watch?v=yx-HYerClEA
+      const seekto = ((e.pageX-seekbar.offsetLeft) / seekbar.offsetWidth) * vid.duration;
+      vid.currentTime = seekto;
+      progressbar.style.width = (vid.currentTime / vid.duration)*100 + "%";
+      progressafter.style.left = progressbar.style.width;
+      progressafter.style.width = (100 - ((vid.currentTime / vid.duration)*100)) + "%";
+      dot.style.left = (((vid.currentTime / vid.duration)*100)-0.3) + "%";
+    }
+
+    function seektimeupdate(){ //updates seekslider's (range's) value
+      if(!mousedown){
+        progressbar.style.width = (vid.currentTime / vid.duration)*100 + "%";
+        progressafter.style.left = progressbar.style.width;
+        progressafter.style.width = (100 - ((vid.currentTime / vid.duration)*100)) + "%";
+        dot.style.left = (((vid.currentTime / vid.duration)*100)-0.3) + "%";
+      }
+      var curmins = Math.floor(vid.currentTime / 60);
+      var cursecs = Math.floor(vid.currentTime - curmins * 60);
+      if(cursecs < 10){ cursecs = "0"+cursecs; }
+      if(curmins < 10){ curmins = "0"+curmins; }
+      curtimetext.innerHTML = curmins+":"+cursecs;
+    }
+
+    function vidmute(){
+      var btn = document.querySelector(".vbutton");
+      if(vid.muted){
+      	vid.muted = false;
+        volumeslider.value = oldvol;
+        setvolume();
+      } else {
+      	vid.muted = true;
+        oldvol = volumeslider.value;
+        volumeslider.value = 0;
+        setvolume();
+      }
+    }
+
+    function setvolume(){
+      vid.volume = volumeslider.value / 20;
+      var btn = document.querySelector(".vbutton");
+      if(vid.volume==0){
+        btn.classList.replace(oldSound, "fa-volume-mute");
+        oldSound = "fa-volume-mute";
+      }
+      else if(vid.volume < 0.5){
+        btn.classList.replace(oldSound, "fa-volume-down");
+        oldSound = "fa-volume-down";
+      }
+      else {
+        btn.classList.replace(oldSound, "fa-volume-up");
+        oldSound = "fa-volume-up";
+      }
+      volumeslider.style.backgroundSize = ((volumeslider.value - volumeslider.min) * 100 / (volumeslider.max - volumeslider.min)) + '% 100%';
+    }
+
+    function toggleFullScreen(){
+      if(isfullscreen){
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+        fullscreenbtn.className = "pbutton fas fa-expand";
+        isfullscreen = false;
+      }
+      else {
+        let elem = vc;
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen();
+        } else if (elem.mozRequestFullScreen) { /* Firefox */
+          elem.mozRequestFullScreen();
+        } else if (elem.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+          elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE/Edge */
+          elem.msRequestFullscreen();
+        }
+        fullscreenbtn.className = "pbutton fas fa-compress";
+        isfullscreen = true;
+      }
+    }
+
+    function play(){
+      var btn = document.querySelector(".pbutton");
+      var btn2 = document.querySelector(".button");
+      btn2.classList.toggle("paused");
+    }
+
+    var subindex = 0;
+    var subindex2 = 0;
+    var vidindex = 0;
+    var video = document.getElementById("video1");
+    var cur = 0;
+    document.getElementById('nextsub').addEventListener('click', finalNextSub);
+    document.getElementById('prevSub').addEventListener('click', finalPrevSub);
+    document.getElementById('hidesubs').addEventListener('click', hideSubs);
+    var elem = document.getElementById("display");
+
+
+    // Functions that set sources =======================================================================================================================
+      var fileName;
+      function GetFileName(){ //Adapted from: https://forums.asp.net/t/2027451.aspx?How+to+get+file+name+selected+in+input+type+file+
+        var fileInput = document.getElementById('file');
+        fileName = fileInput.files[vidindex].name;
+        document.getElementById("filename").innerHTML = fileName;
+      }
+
+      function nextVid(input) {
+          //THE METHOD THAT SHOULD SET the SOURCE of the NEXT VID in the PLAYLIST
+          if (input.files && input.files[vidindex]) {
+              var file = input.files[vidindex];
+              var url = URL.createObjectURL(file);
+              var reader = new FileReader();
+              reader.onload = function() {
+                  video.src = url;
+                  video.play();
+              };
+              reader.readAsDataURL(file);
+          }
+      }
+      function nextSubPrimary(input2){
+        if (input2.files && input2.files[subindex]) {
+            var file = input2.files[subindex]; //gets the first file, if multiple files are chosen
+            var url = URL.createObjectURL(file);
+            console.log(url + " subindex=" + subindex);
+            var reader = new FileReader();
+            /*reader.onload = function() {
+                track.src = url; //makes src of the track element equal to url
+                track.srclang = url; //this line may not be needed
+                track.track.mode = "hidden";
+				myclonedTrack = [];
+            };
+            reader.readAsDataURL(file);*/
+			
+		    reader.onload = (e) => {
+				script = document.getElementById("primsub");
+				if(script){
+					script.remove();
+				}
+				const bile = e.target.result;
+				const lines = bile.split(/\r\n|\n/);
+				script = document.createElement('script');
+				script.type="text/vtt";
+				script.id="primsub";
+				document.body.appendChild(script);
+				script.text = "";
+				script.text = lines.join('\n');
+				myclonedTrack = [];
+				init("track1");
+			  }
+			reader.readAsText(file);
+        }
+      }
+
+      function nextSubSecondary(input3){
+        if (input3.files && input3.files[subindex2]) { //what does this line do? probably checks if ?? and  at least one file is selected
+            var file = input3.files[subindex2]; //gets the first file, if multiple files are chosen
+            var url = URL.createObjectURL(file);
+            console.log(url + " subindex2=" + subindex2);
+            var reader = new FileReader();
+            /*reader.onload = function() {
+                track2.src = url; //makes src of the track element equal to url
+                track2.srclang = url; //this line may not be needed
+                track2.track.mode = "hidden";
+				myclonedTrack2 = [];
+            };
+            reader.readAsDataURL(file);*/
+			reader.onload = (e) => {
+				const bile = e.target.result;
+				const lines = bile.split(/\r\n|\n/);
+				
+				script = document.getElementById("secsub");
+				if(script){
+					script.remove();
+				}
+				script = document.createElement('script');
+				script.type="text/vtt";
+				script.id="secsub";
+				document.body.appendChild(script);
+				script.text = "";
+				script.text = lines.join('\n');
+				
+				myclonedTrack = [];
+				init("track2");
+			  }
+			reader.readAsText(file);
+        }
+      }
+
+	  
+      document.getElementById("file").addEventListener("input", readURL, false);
+      function readURL(input) {
+        input = input.target;
+          //THE METHOD THAT SHOULD SET THE VIDEO SOURCE
+          if (input.files && input.files[0]) {
+              var file = input.files[0];
+              var url = URL.createObjectURL(file);
+              console.log(url);
+              var reader = new FileReader();
+              reader.onload = function() {
+                  video.src = url;
+                  video.play();
+                  vidindex = 0;//resetting playlist index when a new set of videos is selected
+              };
+              reader.readAsDataURL(file);
+          }
+      }
+      var primaryReferenceTime = 0;
+      var track = document.getElementById("track1");
+	  var script;
+      document.getElementById("file2").addEventListener("input", readURL2, false);
+      function readURL2(input) {  //https://developer.mozilla.org/en-US/docs/Web/API/Blob#Example_for_creating_a_URL_to_a_typed_array_using_a_blob
+        input = input.target;
+          //THE METHOD THAT SHOULD SET THE PRIMARY SUBTITLE TRACK SOURCE
+          if (input.files && input.files[subindex]) {
+              var file = input.files[0]; //gets the first file, if multiple files are chosen
+              var url = URL.createObjectURL(file);
+              console.log(url + " subindex=" + subindex);
+			  var reader = new FileReader();
+              //var reader2 = new FileReader();
+              /*reader2.onload = function(e) {
+                  //track.src = url; //makes src of the track element equal to url
+                  //track.srclang = url; //this line may not be needed
+                  //track.track.mode = "hidden";
+                  //subindex = 0;
+				  //myclonedTrack = [];
+				  
+              };
+              reader2.readAsDataURL(file);*/
+			  reader.onload = (e) => {
+				script = document.getElementById("primsub");
+				if(script){
+					script.remove();
+				}
+				const bile = e.target.result;
+				const lines = bile.split(/\r\n|\n/);
+				script = document.createElement('script');
+				script.type="text/vtt";
+				script.id="primsub";
+				document.body.appendChild(script);
+				script.text = "";
+				script.text = lines.join('\n');
+				subindex = 0;
+				myclonedTrack = [];
+				init("track1");
+			  }
+			reader.readAsText(file);
+          }
+      }
+
+      document.getElementById("track1").addEventListener("load", function () {
+        var myTrack = document.getElementById("track1");
+        primaryReferenceTime = myTrack.track.cues[0].startTime;
+      });
+
+      var secondaryReferenceTime = 0;
+      var track2 = document.getElementById("track2");
+      document.getElementById("file3").addEventListener("input", readURL3, false);
+      function readURL3(input) {
+        input = input.target;
+          //THE METHOD THAT SHOULD SET THE SECONDARY SUBTITLE TRACK SOURCE
+          if (input.files && input.files[subindex2]) { //what does this line do? probably checks if ?? and  at least one file is selected
+              var file = input.files[0]; //gets the first file, if multiple files are chosen
+              var url = URL.createObjectURL(file);
+              console.log(url + " subindex2=" + subindex2); //**
+			  var reader = new FileReader();
+              /*var reader2 = new FileReader();
+              reader2.onload = function() {
+                  track2.src = url; //makes src of the track element equal to url
+                  track2.srclang = url; //this line may not be needed
+                  track2.track.mode = "hidden";
+                  secondaryReferenceTime = track2.track.cues[0].startTime;
+                  subindex2 = 0;
+				  myclonedTrack2 = [];
+              };
+              reader2.readAsDataURL(file);*/
+			  reader.onload = (e) => {
+				script = document.getElementById("secsub");
+				if(script){
+					script.remove();
+				}
+				const bile = e.target.result;
+				const lines = bile.split(/\r\n|\n/);
+				script = document.createElement('script');
+				script.type="text/vtt";
+				script.id="secsub";
+				document.body.appendChild(script);
+				script.text = "";
+				script.text = lines.join('\n');
+				subindex = 0;
+				myclonedTrack = [];
+				init("track2");
+			  }
+			reader.readAsText(file);
+			  
+          }
+      }
+
+
+      //Video control functions ===================================================================================================================================================
+	  
+	  /* Return initialized copy of the given track, if uninitialized. Otherwise return the already initialized array */
+	  function initClone(track){
+		var myTrack = document.getElementById(track).track.cues;
+		
+		if(track=="track1"){
+			if(myclonedTrack.length != myTrack.length){
+				for(var j = 0; j < myTrack.length; j++){
+					myclonedTrack[j] = myTrack[j];
+				}
+			}
+			myTrack = myclonedTrack;
+		}
+		else {
+			if(myclonedTrack2.length != myTrack.length){
+				for(var j = 0; j < myTrack.length; j++){
+					myclonedTrack2[j] = myTrack[j];
+				}
+			}
+			myTrack = myclonedTrack2;
+		}
+		return myTrack;
+	  }
+	  
+	  /* For some reason sometimes a cue will be reordered in the cues array. This is because once the starttime is changed by subsync the built-in cue handler does something to re-order it because its starttime is now after some other subtitle's start time. This has been resolved with initClone*/
+      var netOffset = 0; // ** Net Offset being printed out is broken now.
+      function subSync(track, offset){
+		var myTrack = initClone(track);
+        for(var i = 0; i < myTrack.length; i++){
+		  const clone = myTrack[i];
+		  clone.startTime = parseFloat(clone.startTime + offset).toFixed(3)
+		  clone.endTime = parseFloat(clone.endTime + offset).toFixed(3);
+		  // toFixed(3) should fix float addition error that messes up skimming by subtitle/how subs appear on screen a tad too late
+        }
+        /* netOffset += offset; //** might be a problem because offset doesn't differentiate between primary and secondary subtitle, might need to have two vars, one for primary and one for secondary offset, and some if cases
+		// this netOffset needs to be reset every time a new subtitle is loaded. That's why I think it would be better defined as the difference in times before original subtitls and w/e the current sub start time is */
+        netOffset = document.getElementById(track).track.cues[0].startTime - primaryReferenceTime;//(myTrack[0].startTime - primaryReferenceTime);
+        //referenced: https://www.w3schools.com/JSREF/tryit.asp?filename=tryjsref_win_settimeout2
+        var x = document.getElementById("filename");
+        x.innerHTML = fileName + " " + netOffset.toFixed(1)+"s offset";
+        setTimeout(function(){ x.innerHTML=fileName }, 2000); // janky way of doing it, preferably would like to have thing I do last for 2000 not have an offset
+      }
+
+      function getSubInfo(){ //Gets preliminary info of the current active sub to make a Sentence Card
+        var myTrack = document.getElementById("track1").track;
+        if(myTrack.activeCues!=null && myTrack.activeCues.length >0){ //might need to be track.track.activeCues[0].
+          var curtimetext;
+          var sentence = myTrack.activeCues[myTrack.activeCues.length-1].text;
+          var currentTime = myTrack.activeCues[myTrack.activeCues.length-1].startTime;
+          var curmins = Math.floor(currentTime / 60);
+          var cursecs = Math.floor(currentTime - curmins * 60);
+          if(cursecs < 10){ cursecs = "0"+cursecs; }
+          if(curmins < 10){ curmins = "0"+curmins; }
+          curtimetext = curmins+":"+cursecs;
+
+          //var fileInput = document.getElementById('file');
+          //var fileName = fileInput.files[vidindex].name;
+          fileName = document.getElementById("filename").innerHTML;
+          var info = sentence + " [" + fileName + " " + curtimetext + "]";
+
+          //https://stackoverflow.com/questions/400212/how-do-i-copy-to-the-clipboard-in-javascript
+          var textArea = document.createElement("textarea");
+
+          textArea.style.position = 'fixed';
+          textArea.style.top = 0;
+          textArea.style.left = 0;
+          textArea.style.width = '2em';
+          textArea.style.height = '2em';
+          // We don't need padding, reducing the size if it does flash render.
+          textArea.style.padding = 0;
+          // Clean up any borders.
+          textArea.style.border = 'none';
+          textArea.style.outline = 'none';
+          textArea.style.boxShadow = 'none';
+          textArea.style.background = 'transparent';
+          textArea.value = info;
+
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+
+          try {
+            var successful = document.execCommand('copy');
+            var msg = successful ? 'successful' : 'unsuccessful';
+            console.log('Copying text command was ' + msg);
+          } catch (err) {
+            console.log('Oops, unable to copy');
+          }
+
+          document.body.removeChild(textArea);
+
+          document.execCommand("copy");
+        }
+      }
+
+      window.addEventListener("keydown", catchKeydown, false);
+      function catchKeydown(key){
+        if(key.keyCode == '83'){ //if S is pressed
+          hideSubs("display-container");
+        }
+        else if(key.keyCode == '39'){ //if right key is pressed -->
+          key.preventDefault(); //prevents right arrow key being pressed from moving the slider (type range) from going to the next value/tick (no longer using range slider though)
+          // nextSub(key);
+          // altNextSub(key);
+          finalNextSub();
+        }
+        else if(key.keyCode == '37'){ //if left key is pressed <--
+          key.preventDefault();
+          // prevSub(key);
+          // altPrevSub(key);//**might be wonky when prev hasn't been clicked in a while; or perhaps it's only wonky when the subs don't match the video (?). Either use the non-perfect prevSub(), or use altPrevSub with on seek change call getclosestcue
+          finalPrevSub()
+        }
+        else if(key.keyCode == "38"){ //volume up with upkey
+          key.preventDefault();
+          if(video.volume+0.05<=1){//if vol isn't out of bounds
+            volumeslider.value = parseInt(volumeslider.value) + 1;
+            if(video.muted){
+              video.muted = false;
+            }
+            setvolume();
+          }
+        }
+        else if(key.keyCode == "40"){ //volume down with downkey
+          key.preventDefault();
+          if(video.volume-0.05>=0){
+            volumeslider.value -= 1;
+            setvolume();
+          }
+        }
+        else if(key.keyCode == "32"){ //if space key is pressed
+          key.preventDefault(); //prevents space from triggering a button if it's in focus
+          togglePlay(key);
+        }
+        else if(key.keyCode == '82' && (video.textTracks[1].language != "")) { //if key pressed is 'r'
+          hideSubs("second");
+        }
+        else if(key.keyCode == "65"){ //if key pressed is 'a'
+          repeatSub(key);
+        }
+        else if (key.keyCode == "77"){//if key pressed is 'm'
+          vidmute();
+        }
+        else if (key.keyCode == '71'){ //if g is pressed
+          subSync("track1", -0.10);
+        }
+        else if (key.keyCode =='72'){ //if h is pressed
+          subSync("track1", +0.10);
+        }
+        else if(key.keyCode == '90'){ //if z is pressed
+          subSync("track2", -0.10);
+        }
+        else if (key.keyCode == '88'){ //if x is pressed ** There may be a problem with how the adding and subtracting is happening, as is error builds up or something with the adding and such, may cause some subtitle end times to end before the starttime
+          subSync("track2", +0.10);
+        }
+        else if (key.keyCode == '81'){ //if q is pressed
+          subSync("track1", -1.0);
+        }
+        else if (key.keyCode == '87'){ //if w is pressed
+          subSync("track1", +1.0);
+        }
+        else if (key.keyCode == '80'){ //if p is pressed
+          getSubInfo();
+        }
+        else if (key.keyCode == '35'){ //if 'end' is pressed
+          vid.currentTime = vid.duration;
+        }
+        else if(key.keyCode == "70"){ //if key pressed is f
+          toggleFullScreen();
+        }
+		else if(parseInt(key.keyCode) >= 48 && parseInt(key.keyCode) <=57){	//if one of the numbers is pressed
+			video.currentTime = parseFloat( (parseInt(key.keyCode) - 48) ) * 0.10 * video.duration;
+		}
+      }
+
+      function repeatSub(key){
+        if(track.track.activeCues!=null && track.track.activeCues.length >0){ //might need to be track.track.activeCues[0]
+          video.currentTime = track.track.activeCues[track.track.activeCues.length-1].startTime;
+        }
+      }
+
+      /* Toggles specified 'key' subtitles on the screen */
+      function hideSubs(key){
+        var toHide = document.getElementById(key);
+        if(!(toHide.style.visibility == "hidden")){//need to make sure this is the correct version for checking equality of strings
+          toHide.style.visibility = "hidden";
+        }
+        else {
+          toHide.style.visibility = "visible";
+        }
+      }
+
+	  /* Play/pause video */
+      function togglePlay(key){
+          if(video.paused){
+            video.play();
+            playbtn.className = "pbutton fas fa-pause";
+            button.classList.remove("paused");
+          }
+          else {
+            video.pause();
+            playbtn.className = "pbutton fas fa-play";
+            button.classList.add("paused");
+          }
+      }
+
+	  /* Automatically change to next primary subtitle track in playlist when video ends? */
+      // adapted from https://webplatform.github.io/docs/apis/audio-video/TextTrack/cues/
+      track.track.oncuechange = function (){ //** textTracks.length is probably the number of subtitle track tags in the video tag.
+        var text = document.getElementById("display");
+        text.innerHTML = "";
+        var myTrack = document.getElementById("track1").track;
+        var i,j;
+        if(video.textTracks[0].cues.length == 0/*language==""*/){
+          //skip over it
+        }
+        else {
+          for(i=video.textTracks[0].activeCues.length-1; i>=0; i--){
+            text.innerHTML +=(`<div class="text-area" id="sub${0+1}">` + video.textTracks[0].activeCues[i].getCueAsHTML().textContent + "</div>");
+          }
+        }
+      }
+
+      track2.track.oncuechange = function (){
+        var text2 = document.getElementById("second");
+        text2.innerHTML = "";
+        var i,j;
+        if(video.textTracks[1].language == ""){
+          //do nothing
+        }
+        else {
+          for(i=video.textTracks[1].activeCues.length-1; i>=0; i--){
+            text2.innerHTML +=(`<div class="text-area" id="sub${2}">` + video.textTracks[1].activeCues[i].getCueAsHTML().textContent + "</div>");
+          }
+        }
+      }
+	  
+	 
+	 /* Kimetsu no yaiba 15 - track.track.cues[205] its end time is before it start-time. This happened because I accidentally clicked the shift subtitle button, which must be flawed in some way (perhaps a rounding problem) that affects the start and endtimes of certain queues' start and endtimes. This problem can be replicated by opening the ep and subtitle track, then pressing 'q' then 'w' , i.e. -1 and then +1 offset to end with the original 0.0 offset.** */
+	//Takes a timecode as input and returns closest active cue after it
+     function finalGetClosestNext(myTrack){
+       // for active cue length > 1 for next sub: search by startTime of activecue[length] if startTime equal, then check if cue is equal to target, if it is return it, else if it isn't then it must be upward, so search index by index upwards.
+       // for active cue length > 1 for prev sub: search
+
+       var upper = myTrack.cues.length;
+       var mid = 0;
+       var lower = 0;
+       var key = 0;
+
+         key =  +video.currentTime.toFixed(3);
+         for(lower = 0; (upper-lower)>0; ){//are there fewer than two things in the array? [0 1] 2 3 4]. lower is the index of the leftmost element, upper is the number of elements in the array subset
+           // console.log("Mid_t:" + mid);
+           mid = Math.floor(((upper-lower)/2)+lower); //*might be problematic
+           if(myTrack.cues[mid].startTime<= key){ //startTime <= key <= endTime, i.e. key is in the range of the subtitle
+             if(key < myTrack.cues[mid].endTime){
+               cur = mid;
+               break;
+             }
+             lower = mid+1;
+             cur = lower;
+           }
+           // else if(myTrack.cues[mid].startTime>key){
+           else {
+             upper = mid-1;
+             cur = upper;
+           }
+         }
+
+         // Makes sure cur isn't out of bounds. i.e. for cases when get closest is called before the first subtitle appears on the screen
+         if (cur<0) cur = 0;
+         //this part is to make sure there are no closer subtitles to the key (currentTime) than what we found by binary search approximation
+         var difference = 0;
+         var differencetwo = 0;
+         if(key < myTrack.cues[cur].startTime){
+           while(((myTrack.cues[cur].startTime - key) >0) && ((cur-1)>=0)){ //loop until you find the closest cue from the right
+             difference = myTrack.cues[cur].startTime - key;
+             differencetwo = myTrack.cues[cur-1].startTime - key;
+             if((differencetwo>0) && (differencetwo < difference)) { //**if difference==0, then they have the same start times, in which case I want the one that is farthest to the right, which we found in the active cue search at the beginning of this function
+               cur = cur-1;
+             }
+             else {
+               break;
+             }
+           }
+         }
+         else if(key >= myTrack.cues[cur].startTime){
+           while(((key - myTrack.cues[cur].startTime) > 0) && ((cur+1) < myTrack.cues.length)){ //loop until you find the closest cue from the left
+             difference = key - myTrack.cues[cur].startTime;
+             differencetwo = key - myTrack.cues[cur+1].startTime;
+             if((differencetwo>=0) && (differencetwo <= difference)){ //we want equal in this case because it gets the one with the largest id since cur is incremented
+               cur = cur+1;
+             }
+             else {
+               break;
+             }
+           }
+         }
+         key3 = myTrack.cues[cur].startTime;
+         /* ============ THERE MIGHT STILL BE MULTIPLE CUES WITH THE SAME start time, WE WANT THE ONE FARTHEST TO THE LEFT: =============== */
+         while((myTrack.cues[cur+1].startTime == key3)){
+           if(myTrack.cues[cur+1].startTime == key3){
+             cur++;
+           }
+           else {
+             break;
+           }
+         }
+
+       }
+
+     function finalGetClosestPrev(myTrack){
+       // for active cue length > 1 for next sub: search by startTime of activecue[length] if startTime equal,
+       // then check if cue is equal to target, if it is return it, else if it isn't then it must be upward, so search index by index upwards.
+
+       var upper = myTrack.cues.length;
+       var mid = 0;
+       var lower = 0;
+
+         key =  video.currentTime;
+         var key2 = 0;
+         for(lower = 0; (upper-lower)>0; ){//are there fewer than two things in the array? [0 1] 2 3 4]. lower is the index of the leftmost element, upper is the number of elements in the array subset
+           // console.log("Mid_t:" + mid);
+           mid = Math.floor(((upper-lower)/2)+lower); //*might be problematic
+           if(myTrack.cues[mid].startTime<= key){ //startTime <= key <= endTime, i.e. key is in the range of the subtitle
+             if(key <= myTrack.cues[mid].endTime){
+               cur = mid;
+               break;
+             }
+             lower = mid+1;
+             cur = lower;
+           }
+           // else if(myTrack.cues[mid].startTime>key){
+           else {
+             upper = mid-1;
+             cur = upper;
+           }
+         }
+
+
+         /* ============= MAKING SURE cur IS THE CLOSEST SUB TO KEY ================= */
+         //this part is to make sure there are no closer subtitles to the key (currentTime) than what we found by binary search
+         var difference = 0;
+         var differencetwo = 0;
+         if(key < myTrack.cues[cur].startTime){
+           while(((myTrack.cues[cur].startTime - key) >0) && ((cur-1)>=0)){ //loop until you find the closest cue from the right
+             difference = myTrack.cues[cur].startTime - key;
+             differencetwo = myTrack.cues[cur-1].startTime - key;
+             if(differencetwo <= difference){ //if difference==0, then they have the same start times
+               cur = cur-1;
+             }
+             else {
+               break;
+             }
+           }
+         }
+         else if(key > myTrack.cues[cur].startTime){
+           while(((key - myTrack.cues[cur].startTime) > 0) && ((cur+1) < myTrack.cues.length)){ //loop until you find the closest cue from the left
+             difference = key - myTrack.cues[cur].startTime;
+             differencetwo = key - myTrack.cues[cur+1].startTime;
+             if((differencetwo>=0) && (differencetwo <= difference)){
+               cur = cur+1;
+             }
+             else {
+               break;
+             }
+           }
+         }
+         key2 = myTrack.cues[cur].startTime;
+         /* ============ THERE MIGHT STILL BE MULTIPLE CUES WITH THE SAME start time, WE WANT THE ONE FARTHEST TO THE LEFT: =============== */
+         while( myTrack.cues[cur-1]!=undefined && ((+myTrack.cues[cur-1].startTime.toFixed(1)) == key2.toFixed(1))){ // doing toFixed because the start times of the the adjacent subtitles are so close to each other that they can basically be considered the same start time when key pressing speed is taken into consideration
+           if(((+myTrack.cues[cur-1].startTime.toFixed(1)) == key2.toFixed(1))){
+             cur--;
+           }
+           else {
+             break;
+           }
+         }
+
+     }
+
+	 
+     function finalNextSub(){
+       var myTrack = null;
+       var key = +video.currentTime.toFixed(3);
+       if(document.getElementById("track1").track.cues.length!=0){//shouldn't this be track.srclang?
+		 myTrack = document.getElementById("track1").track;
+       }
+       else if(document.getElementById("track2").track.cues.length!=0){
+         myTrack = document.getElementById("track2").track;
+       }
+       else {
+         return;
+       }
+       if(video.currentTime >= myTrack.cues[myTrack.cues.length-1].startTime){ //checking for upper bound of subtitles, i.e. can't go to next sub if it's the last subtitle in the video
+         return;
+       }
+       else {
+         var nextCue = myTrack.cues[cur+1];
+         finalGetClosestNext(myTrack);
+         if(myTrack.cues[cur].startTime>key){ //if cur is to the right of current time
+           nextCue = myTrack.cues[cur];
+         }
+         else {
+           nextCue = myTrack.cues[cur+1];
+         }
+
+         if(myTrack.cues.length > 0) {
+           video.currentTime = nextCue.startTime;
+           // video.currentTime = +video.currentTime.toFixed(3);
+           cur++;
+         }
+       }
+     }
+
+	/* Skims to the start time of the previous subtitle */
+     function finalPrevSub(){
+       var myTrack = null;
+       var key = +video.currentTime.toFixed(3);
+       if(document.getElementById("track1").track.cues.length!=0){
+         myTrack = document.getElementById("track1").track;
+         // altGetClosestCue(myTrack);
+       }
+       else if(document.getElementById("track2").track.cues.length!=0){
+         myTrack = document.getElementById("track2").track;
+         // altGetClosestCue(myTrack);
+       }
+       else {
+         return;
+       }
+       //if video is currently playing at a time before the first subtitle, do nothing
+       if(video.currentTime <= myTrack.cues[0].startTime){
+         return;
+       }
+       // else if(myTrack.cues[0]===myTrack.activeCues[myTrack.activeCues.length-1]){
+       else if((myTrack.activeCues.length > 0) && (myTrack.cues[0].startTime == myTrack.activeCues[myTrack.activeCues.length-1].startTime)){ //if you're on the first subtitle of the video, prev will just put you at the beginning of that subtitle
+         video.currentTime = myTrack.cues[0].startTime;
+       }
+       else if(key > myTrack.cues[myTrack.cues.length-1].endTime){ //if you're at a time after the last subtitle, go back to to the last subtitle
+         video.currentTime = myTrack.cues[myTrack.cues.length-1].startTime;
+       }
+       else {
+         var prevCue = myTrack.cues[cur-1];
+         finalGetClosestPrev(myTrack);
+         if(key <= myTrack.cues[cur].endTime){ // proof by picture :  | <____>    where the prev is a timeline and | is video.currentTime and <____> is the range myTrack.cues[cur]
+           prevCue = myTrack.cues[cur-1];
+           cur--;
+         }
+         else {
+           prevCue = myTrack.cues[cur];
+         }
+         if(myTrack.cues.length > 0) {
+           video.currentTime = prevCue.startTime + 0.01; //added the +0.01 to tie break subs that end at the exact same time another starts**
+           // cur--;
+         }
+       }
+     }
+	 
+	 
+	function parse_timestamp(s) {
+		//var match = s.match(/^(?:([0-9]{2,}):)?([0-5][0-9]):([0-5][0-9][.,][0-9]{0,3})/);
+		// Relaxing the timestamp format:
+		var match = s.match(/^(?:([0-9]+):)?([0-5][0-9]):([0-5][0-9](?:[.,][0-9]{0,3})?)/);
+		if (match == null) {
+			throw 'Invalid timestamp format: ' + s;
+		}
+		var hours = parseInt(match[1] || "0", 10);
+		var minutes = parseInt(match[2], 10);
+		var seconds = parseFloat(match[3].replace(',', '.'));
+		return seconds + 60 * minutes + 60 * 60 * hours;
+	}
+	
+	// https://w3c.github.io/webvtt/
+	// https://developer.mozilla.org/en/docs/Web/API/Web_Video_Text_Tracks_Format
+	// https://en.wikipedia.org/wiki/WebVTT
+	//
+	// For better parsers, look at:
+	// https://github.com/annevk/webvtt
+	// https://github.com/mozilla/vtt.js
+	function quick_and_dirty_vtt_or_srt_parser(vtt) {
+		var lines = vtt.trim().replace('\r\n', '\n').split(/[\r\n]/).map(function(line) {
+			return line.trim();
+		});
+		var cues = [];
+		var start = null;
+		var end = null;
+		var payload = null;
+		for (var i = 0; i < lines.length; i++) {
+			if (lines[i].indexOf('-->') >= 0) {
+				var splitted = lines[i].split(/[ \t]+-->[ \t]+/);
+				if (splitted.length != 2) {
+					throw 'Error when splitting "-->": ' + lines[i];
+				}
+
+				// Already ignoring anything past the "end" timestamp (i.e. cue settings).
+				start = parse_timestamp(splitted[0]);
+				end = parse_timestamp(splitted[1]);
+			} else if (lines[i] == '') {
+				if (start && end) {
+					var cue = new VTTCue(start, end, payload);
+					cues.push(cue);
+					start = null;
+					end = null;
+					payload = null;
+				}
+			} else if(start && end) {
+				if (payload == null) {
+					payload = lines[i];
+				} else {
+					payload += '\n' + lines[i];
+				}
+			}
+		}
+		if (start && end) {
+			var cue = new VTTCue(start, end, payload);
+			cues.push(cue);
+		}
+
+		return cues;
+	}
+	
+	function init(myTrack) {
+		// http://www.html5rocks.com/en/tutorials/track/basics/
+		// https://www.iandevlin.com/blog/2015/02/javascript/dynamically-adding-text-tracks-to-html5-video
+		var video = document.querySelector('video');
+		var subtitles = document.getElementsByTagName('script');
+		Array.prototype.slice.call(subtitles)
+			.filter(node => node.type === "text/vtt")
+			.map(subtitle => {
+				//var track = video.addTextTrack('subtitles', subtitle.dataset.label, subtitle.dataset.lang);
+				var track = document.getElementById(myTrack).track;
+				track.mode = "hidden";
+				const len = track.cues.length;
+				for(i = 0; i<len; i++){
+					track.removeCue(track.cues[0]);
+				}
+				quick_and_dirty_vtt_or_srt_parser(subtitle.innerHTML).map(function(cue) {
+					track.addCue(cue);
+				});
+				primaryReferenceTime = track.cues[0].startTime;
+			});
+	}
+	
+	
+  </script>
+
+</html>
