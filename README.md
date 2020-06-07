@@ -4,29 +4,31 @@ A custom HTML5 video player coded in JavaScript and styled in CSS that allows th
 I wanted to encapsulate anything you would need to use the program into one file for most accessibility and ease of use.
 
 # How to use/Shortcuts
-Just download the repository - the only file you need is the html one.
+Just download the repository - the only file you need is the entrack html one.
 
 * ← Left arrow key: Skim to the previous subtitle cue
 * → Right arrow key: Skim to the next subtitle cue
 * ↓ Down arrow key:     Decrease volume by 5%
 * ↑ Up arrow key:       Increase volume by 5%
 
+* Numbers : skim to different parts of the video using the number keys. 1 corresponds to a tenth of the way through the video, 0 to the beginning of the video, 9 to nine tenths, etc.
+
 * S: Toggle primary subtitle track
 * R: Toggle secondary subtitile track
-* A: Replay video from beginning of current subtitle cue
+* A: Rewind to the beginning of current active subtitle cue
 * M: mute
 * F: toggle fullscreen
 * Z: Shift secondary subtitle times back by 0.1 seconds (100 milliseconds)
 * X: Shift secondary subtitle times forward by 0.1 seconds
-* G: Shift primary subtitle times back by 0.1 seconds
-* H: Shift primary subtitle times forward by 0.1 seconds
+* Q: Shift primary subtitle times back by 0.1 seconds
+* W: Shift primary subtitle times forward by 0.1 seconds
 * P: Copy video title, current subtitle timestamp and text to clipboard
 
 ## Support
 Since this is a browser-based video player, file support depends on the browser. 
-In general, webVTT subtitles are the best subtitle files to use. mp4 files are good, h264 is good. Google Chrome basically supports MKV, but FireFox doesn't. All in all, Google Chrome is the best browser to use with EnTrack, then it's FireFox. Internet Explorer seems to be a lost cause, and I haven't tried it ony any other browsers.
+In general, webVTT subtitles are the best subtitle files to use, however srt support has now also been added. mp4 files are good, h264 is good. Google Chrome basically supports MKV, but FireFox doesn't. All in all, Google Chrome is the best browser to use with EnTrack, then it's FireFox. Internet Explorer seems to be a lost cause, and I haven't tried it ony any other browsers.
 
-[Here's a link](https://subtitletools.com/convert-to-vtt-online) that can very quickly convert dozens of subtitle files of a multitude of types to webVTT at once.
+[Here's a link](https://subtitletools.com/convert-to-vtt-online) that can very quickly convert subtitle files of a multitude of types to webVTT at once.
 
 # Things to Add
 As it is now, I am using Font Awesome 5 Video/Audio icons, which require a CDN (i.e. internet connection) for the icons to be loaded so the icons will not all appear without an internet connection, however the buttons are still there and can be used.
