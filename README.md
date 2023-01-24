@@ -18,6 +18,8 @@ Just download the repository - the only file you need is the entrack html one.
 * A: Rewind to the beginning of current active subtitle cue
 * M: mute
 * F: toggle fullscreen
+* -: Decrease subtitle font size
+* +: Increase subtitle font size
 * Q: Shift primary subtitle times back by 1 second
 * W: Shift primary subtitle times forward by 1 second
 * Z: Shift secondary subtitle times back by 0.1 seconds 
